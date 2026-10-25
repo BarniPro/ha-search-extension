@@ -48,7 +48,13 @@ python3 test-extension-build.py
 
 These tests use local mocks. They do not contact an AI provider or prove that Használtautó's live DOM has not changed.
 
-To exercise the real extension service-worker client against the sibling backend's HTTP API with a deterministic fake provider, run `python3 verify-repositories.py` from this workspace root. This local integration check covers extension-origin CORS, guest-token issuance, interpretation request/response fields, and the one-use plan handoff; it binds only to loopback and sends no provider request.
+To exercise the real extension service-worker client against the sibling backend's HTTP API with a deterministic fake provider, run this from the workspace root after installing the backend test dependencies in `backend/.venv` (Node.js must be on `PATH`):
+
+```sh
+PYTHON_BIN=backend/.venv/bin/python NODE_BIN=node backend/.venv/bin/python verify-repositories.py
+```
+
+This local integration check covers extension-origin CORS, guest-token issuance, interpretation request/response fields, and the one-use plan handoff; it uses an in-process API client and sends no provider request.
 
 ## Public repository note
 
