@@ -1,0 +1,17 @@
+<!doctype html><html lang="hu"><meta charset="utf-8"><title>Gyors keresés beállításai</title><style>
+body{width:340px;margin:0;padding:20px;color:#25303b;font:14px/1.5 system-ui,sans-serif}h1{font-size:18px;margin:0 0 8px}p{margin:7px 0;color:#627180}.mode{padding:10px 12px;border:1px solid #d6dce0;border-radius:6px;background:#f8fafb}.field{display:block;margin-top:14px;font-weight:600}input[type=url]{display:block;box-sizing:border-box;width:100%;margin-top:5px;padding:8px;border:1px solid #b9c2ca;border-radius:4px;font:13px system-ui}button{margin-top:10px;border:0;background:#ff4200;color:#fff;border-radius:4px;padding:8px 12px;cursor:pointer;font:600 13px system-ui}button:disabled{opacity:.65;cursor:wait}.status{min-height:20px;font-size:12px;color:#627180}.status.error{color:#a42f12}.status.ok{color:#326f32}details{margin-top:13px;border-top:1px solid #edf0f2;padding-top:10px}summary{cursor:pointer;color:#596875;font-size:12px}details label{display:block;margin-top:9px;font-size:12px}details p{font-size:11px}h2{font-size:14px;margin:18px 0 6px}table{width:100%;border-collapse:collapse;font-size:12px}td{padding:5px 0;border-bottom:1px solid #edf0f2}td:last-child{text-align:right;font-variant-numeric:tabular-nums}.total{color:#b73900;font-weight:700}#version{font-size:11px;color:#71808e}
+</style><body>
+<h1>Gyors keresés</h1>
+<p class="mode"><strong>A · Részletes kereső</strong><br>Ez az alapértelmezett keresési út.</p>
+<label class="field" for="apiBaseUrl">Backend API cím</label>
+<input id="apiBaseUrl" type="url" inputmode="url" autocomplete="url" placeholder="https://api.sajat-domain.hu" aria-describedby="apiHelp">
+<p id="apiHelp">HTTPS-címet adj meg. Fejlesztéshez localhost használható. Belépés nélkül is kereshetsz; a bővítmény vendégmunkamenetet kér a backendtől.</p>
+<button id="save" type="button">Backend cím mentése</button><p id="saved" class="status" role="status" aria-live="polite"></p>
+<div id="googleAuth" hidden><button id="googleLogin" type="button">Belépés Google-fiókkal</button><button id="googleLogout" type="button" hidden>Kijelentkezés</button><p id="authStatus" class="status" role="status" aria-live="polite"></p></div>
+<details><summary>Kísérleti beállítások</summary>
+<label><input id="enableHomeMode" type="checkbox"> B · Főoldali kereső engedélyezése</label>
+<p id="homeModeHelp">Az alapértelmezett buildben ki van kapcsolva. A B mód csak külön engedélyezett builddel, ezzel a kapcsolóval és a backend beállításával használható. Élesítés előtt élő HAHU űrlapon kell ellenőrizni.</p>
+</details>
+<h2>Utolsó keresés mérése</h2><div id="measurement" class="status">Még nincs mérés.</div>
+<button id="export" type="button">Mérési adatok mentése</button><p id="version"></p>
+<script src="popup.js"></script></body></html>

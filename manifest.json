@@ -1,0 +1,58 @@
+{
+  "manifest_version": 3,
+  "name": "Gyors keresés – Használtautó.hu",
+  "version": "0.5.1",
+  "description": "Természetes nyelvű autókeresés a Használtautó.hu saját szűrőivel.",
+  "permissions": [
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "http://localhost/*",
+    "https://localhost/*",
+    "http://127.0.0.1/*",
+    "https://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.hasznaltauto.hu/",
+        "https://www.hasznaltauto.hu/kereso*"
+      ],
+      "js": [
+        "quick-search-ui.js",
+        "progress.js",
+        "native-adapter.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.hasznaltauto.hu/bovitettkereso/*"
+      ],
+      "js": [
+        "form-state.js",
+        "native-adapter.js",
+        "advanced.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.hasznaltauto.hu/*"
+      ],
+      "js": [
+        "progress.js",
+        "result-note.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Gyors keresés"
+  }
+}
