@@ -14,6 +14,8 @@
     :host .submit,#quick-search-mount .submit{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:138px;height:46px;padding:8px 16px;color:#fff;background:#ff4200;border:0;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,.18)}
     :host .submit .icon,:host .submit .label,#quick-search-mount .submit .icon,#quick-search-mount .submit .label{position:relative;z-index:1}
     :host .submit .icon,#quick-search-mount .submit .icon{font:19px/1 Georgia,serif}
+    :host .submit .icon.spinner,#quick-search-mount .submit .icon.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.9);border-right-color:transparent;border-radius:50%;font-size:0;animation:haai-spin .8s linear infinite}
+    @keyframes haai-spin{to{transform:rotate(360deg)}}
     :host .submit:hover,#quick-search-mount .submit:hover{background:#e63b00}
     :host .submit:disabled,#quick-search-mount .submit:disabled{opacity:.76;cursor:wait}
     :host .progress-track,#quick-search-mount .progress-track{position:absolute;left:5px;right:5px;bottom:4px;height:3px;overflow:hidden;border-radius:3px;background:rgba(255,255,255,.32);opacity:0;transition:opacity .15s ease}
@@ -38,15 +40,15 @@
     :host .help-example strong,#quick-search-mount .help-example strong{font-size:13px;font-weight:500}
     :host .help-note,#quick-search-mount .help-note{font-size:12px;color:#666}
     :host .help-disclaimer,#quick-search-mount .help-disclaimer{margin:11px 0 0!important;padding:9px 10px;border-left:3px solid #d58512;background:#fff8eb;color:#5c4b32;font-size:12px;line-height:1.5}
-    :host .status,#quick-search-mount .status{margin-top:9px;font-size:12px;line-height:1.45}
+    :host .status,#quick-search-mount .status{margin-top:9px;padding:7px 9px;border-left:3px solid #218fbd;background:#f3f8fa;color:#444;font-size:12px;line-height:1.45}
     :host .status:empty,#quick-search-mount .status:empty{display:none}
-    :host .status.error,#quick-search-mount .status.error{color:#a42f12}
+    :host .status.error,#quick-search-mount .status.error{border-left-color:#a42f12;background:#fff5f2;color:#a42f12}
     :host .status.ok,#quick-search-mount .status.ok{color:#326f32}
     :host .chips,#quick-search-mount .chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
     :host .chips:empty,#quick-search-mount .chips:empty{display:none}
     :host .chip,#quick-search-mount .chip{display:inline-block;background:#fff;border:1px solid #d4d4d4;border-radius:3px;padding:3px 7px;font-size:11px;color:#444}
     @media(max-width:580px){:host form,#quick-search-mount form{gap:7px}:host .query,#quick-search-mount .query{font-size:14px}:host .submit,#quick-search-mount .submit{min-width:96px;font-size:14px;padding:7px 10px}}
-    @media(prefers-reduced-motion:reduce){:host .progress-track,:host .progress-fill,#quick-search-mount .progress-track,#quick-search-mount .progress-fill{transition:none}}
+    @media(prefers-reduced-motion:reduce){:host .progress-track,:host .progress-fill,#quick-search-mount .progress-track,#quick-search-mount .progress-fill{transition:none}:host .submit .icon.spinner,#quick-search-mount .submit .icon.spinner{animation:none;border-right-color:rgba(255,255,255,.9)}}
   `;
   const examples = Object.freeze([
     "opel astra benzines 2m alatt",

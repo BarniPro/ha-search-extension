@@ -44,10 +44,44 @@
     return new Promise((resolve, reject) => area.set(values, () => chrome.runtime.lastError ? reject(new Error(chrome.runtime.lastError.message)) : resolve()));
   }
 
+  function storageRemove(area, keys) {
+    return new Promise((resolve, reject) => area.remove(keys, () => chrome.runtime.lastError ? reject(new Error(chrome.runtime.lastError.message)) : resolve()));
+  }
+
+  function resultNoticeKey(sender) {
+    const tabId = sender?.tab?.id;
+    if (!Number.isSafeInteger(tabId) || tabId < 0 || !chrome.storage.session) return null;
+    try {
+      const url = new URL(sender.url);
+      if (url.protocol !== "https:" || url.hostname !== "www.hasznaltauto.hu") return null;
+    } catch { return null; }
+    return `haaiResultNotice:${tabId}`;
+  }
+
+  async function storeResultNotice(sender, value) {
+    const key = resultNoticeKey(sender);
+    if (!key) throw new Error("A keresési figyelmeztetést nem tudtam biztonságosan eltárolni.");
+    const omissions = Array.isArray(value) ? [...new Set(value.filter(item => typeof item === "string").map(item => item.trim()).filter(Boolean))].slice(0, 8).map(item => item.slice(0, 300)) : [];
+    if (!omissions.length) await storageRemove(chrome.storage.session, key);
+    else await storageSet(chrome.storage.session, { [key]: { omissions, expiresAt: Date.now() + 120000 } });
+    return { ok: true };
+  }
+
+  async function consumeResultNotice(sender) {
+    const key = resultNoticeKey(sender);
+    if (!key) return { ok: false };
+    const stored = await storageGet(chrome.storage.session, key);
+    await storageRemove(chrome.storage.session, key);
+    const notice = stored[key];
+    if (!notice || !Number.isFinite(notice.expiresAt) || notice.expiresAt < Date.now()) return { ok: true, omissions: [] };
+    const omissions = Array.isArray(notice.omissions) ? notice.omissions.filter(item => typeof item === "string").slice(0, 8) : [];
+    return { ok: true, omissions };
+  }
+
   async function getConfig() {
     const stored = await storageGet(chrome.storage.local, DEFAULTS);
     const accountToken = await getBearerToken();
-    let apiBaseUrl = "";
+    let apiBaseUrl = CONFIGURED_BACKEND_ORIGIN || DEFAULTS.apiBaseUrl;
     try { if (typeof stored.apiBaseUrl === "string" && stored.apiBaseUrl) apiBaseUrl = assertAllowedApiBase(stored.apiBaseUrl); }
     catch {}
     return {
@@ -261,7 +295,15 @@
     } finally { clearTimeout(timeout); }
   }
 
-  chrome.runtime.onMessage.addListener((message, _sender, respond) => {
+  chrome.runtime.onMessage.addListener((message, sender, respond) => {
+    if (message?.type === "HAAI_STORE_RESULT_NOTICE") {
+      storeResultNotice(sender, message.omissions).then(respond, error => respond({ ok: false, error: String(error.message || error) }));
+      return true;
+    }
+    if (message?.type === "HAAI_CONSUME_RESULT_NOTICE") {
+      consumeResultNotice(sender).then(respond, () => respond({ ok: false, omissions: [] }));
+      return true;
+    }
     if (message?.type === "HAAI_GET_CONFIG") {
       getConfig().then(config => respond({ ok: true, config }), () => respond({ ok: false, config: DEFAULTS }));
       return true;

@@ -18,6 +18,16 @@
     if (window.parent !== window) window.parent.postMessage({ type, ...details }, location.origin);
   }
 
+  function storeResultNotice(omissions) {
+    return new Promise(resolve => {
+      try {
+        chrome.runtime.sendMessage({ type: "HAAI_STORE_RESULT_NOTICE", omissions }, response => {
+          resolve(chrome.runtime.lastError ? { ok: false } : response || { ok: false });
+        });
+      } catch { resolve({ ok: false }); }
+    });
+  }
+
   async function applyPlan(plan) {
     if (!form()) throw new Error("A részletes kereső nem töltődött be.");
     if (plan?.mode !== "A") throw new Error("Ez a részletes űrlap nem tudja alkalmazni a visszaadott keresési módot.");
@@ -30,9 +40,10 @@
       await globalThis.HAAINativeAdapter.applyAdvanced(form(), filters);
       const submit = submitButton();
       if (!submit || submit.disabled) throw new Error("A keresés gombja nem elérhető.");
-      // The result page only needs omissions. The query itself stays in memory
-      // on the search page and is never placed in session storage or a URL.
-      sessionStorage.setItem("haai-search-result-v2", JSON.stringify({ omissions }));
+      // Keep the short omission notice in extension session storage, outside
+      // the page's origin storage. The original query is never persisted.
+      const stored = await storeResultNotice(omissions);
+      if (!stored.ok) throw new Error("A kihagyott feltételek jelzését nem sikerült biztonságosan átadni.");
       show("A feltételek beállítva. A keresés indul…");
       submit.click();
     } catch (error) {
