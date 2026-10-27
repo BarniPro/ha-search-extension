@@ -1,5 +1,5 @@
 (() => {
-  const DEFAULTS = { apiBaseUrl: "", enableHomeMode: false };
+  const DEFAULTS = { apiBaseUrl: "http://localhost:8080", enableHomeMode: false, haaiManualApiKey: "" };
   // Build-time gate. The shipped build keeps this false; a B-capable build is
   // opt-in via ENABLE_HOME_MODE=true and still needs the popup and server gates.
   const ENABLE_HOME_MODE = false;
@@ -10,12 +10,12 @@
   const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);
 
   function normalizeApiBase(value) {
-    if (typeof value !== "string" || value.length > 300) throw new Error("Add meg a backend HTTPS-címét.");
+    if (typeof value !== "string" || value.length > 300) throw new Error("Add meg a backend címét.");
     let url;
     try { url = new URL(value.trim()); }
     catch { throw new Error("A backend címe nem érvényes URL."); }
     const local = ["localhost", "127.0.0.1"].includes(url.hostname);
-    if (url.protocol !== "https:" && !(local && url.protocol === "http:")) throw new Error("A backendhez HTTPS szükséges (kivéve a localhost fejlesztői címet).");
+    if (url.protocol !== "https:" && !(local && url.protocol === "http:")) throw new Error("A backendhez HTTPS szükséges; fejlesztéshez HTTP localhost vagy 127.0.0.1 használható.");
     if (url.username || url.password || url.search || url.hash || url.pathname !== "/") throw new Error("Csak a backend gyökércímét add meg, útvonal és belépési adat nélkül.");
     return url.origin;
   }
@@ -27,7 +27,7 @@
       return base;
     }
     const host = new URL(base).hostname;
-    if (!['localhost', '127.0.0.1'].includes(host)) throw new Error("Ebben a fejlesztői buildben csak localhost backend használható. Éles buildhez add meg a BACKEND_ORIGIN beállítást.");
+    if (new URL(base).protocol !== "http:" || !["localhost", "127.0.0.1"].includes(host)) throw new Error("Ebben a fejlesztői buildben csak HTTP localhost backend használható. Éles buildhez add meg a BACKEND_ORIGIN beállítást.");
     return base;
   }
 
@@ -95,7 +95,8 @@
       enableHomeMode: CLIENT_HOME_MODE_ENABLED && stored.enableHomeMode === true,
       homeModeBuildEnabled: CLIENT_HOME_MODE_ENABLED,
       googleOAuthConfigured: Boolean(oauthClientId()),
-      signedIn: Boolean(accountToken)
+      signedIn: Boolean(accountToken),
+      manualKeyConfigured: typeof stored.haaiManualApiKey === "string" && stored.haaiManualApiKey.length > 0
     };
   }
 
@@ -159,6 +160,36 @@
     return new Promise(resolve => chrome.permissions.contains({ origins: [pattern] }, resolve));
   }
 
+  function normalizeManualApiKey(value) {
+    if (typeof value !== "string") throw new Error("Másold be az üzemeltetőtől kapott hozzáférési kulcsot.");
+    const key = value.trim();
+    if (key.length > 200 || !/^haai_[a-f0-9]{16}_[A-Za-z0-9_-]{32,}$/.test(key)) {
+      throw new Error("A hozzáférési kulcs formátuma érvénytelen.");
+    }
+    return key;
+  }
+
+  async function fetchQuota(apiBaseUrl, token) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch(`${apiBaseUrl}/v1/quota`, {
+        method: "GET",
+        headers: { "Accept": "application/json", Authorization: `Bearer ${token}` },
+        signal: controller.signal,
+        cache: "no-store",
+        credentials: "omit",
+        redirect: "error"
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(typeof data?.message === "string" ? data.message : `A kulcs ellenőrzése sikertelen (${response.status}).`);
+      if (data?.principal_type !== "api_key" || !Number.isSafeInteger(data.remaining_requests) || data.remaining_requests < 0) {
+        throw new Error("A backend nem adott vissza érvényes kulcskeretet.");
+      }
+      return data;
+    } finally { clearTimeout(timeout); }
+  }
+
   function validatePayload(data) {
     if (!data || typeof data !== "object" || !Array.isArray(data.filters) || !Array.isArray(data.omissions) || !["A", "B"].includes(data.mode) || typeof data.request_id !== "string") {
       throw new Error("A backend válasza nem felel meg az API-szerződésnek.");
@@ -197,15 +228,38 @@
   }
 
   async function getAuthorization(apiBaseUrl) {
+    const local = await storageGet(chrome.storage.local, { haaiManualApiKey: null });
+    if (typeof local.haaiManualApiKey === "string" && local.haaiManualApiKey.length > 0) {
+      return { kind: "api_key", token: local.haaiManualApiKey };
+    }
     const accountToken = await getBearerToken();
     if (accountToken) return { kind: "user", token: accountToken };
-    const local = await storageGet(chrome.storage.local, { haaiInstallId: null, haaiGuestToken: null, haaiGuestTokenExpiresAt: 0 });
-    const installId = typeof local.haaiInstallId === "string" && local.haaiInstallId.length >= 16 ? local.haaiInstallId : randomId();
-    if (typeof local.haaiGuestToken === "string" && local.haaiGuestToken.length > 0 && Number(local.haaiGuestTokenExpiresAt) > Date.now() + 60000 && installId === local.haaiInstallId) {
-      return { kind: "guest", token: local.haaiGuestToken, installId };
+    const guest = await storageGet(chrome.storage.local, { haaiInstallId: null, haaiGuestToken: null, haaiGuestTokenExpiresAt: 0 });
+    const installId = typeof guest.haaiInstallId === "string" && guest.haaiInstallId.length >= 16 ? guest.haaiInstallId : randomId();
+    if (typeof guest.haaiGuestToken === "string" && guest.haaiGuestToken.length > 0 && Number(guest.haaiGuestTokenExpiresAt) > Date.now() + 60000 && installId === guest.haaiInstallId) {
+      return { kind: "guest", token: guest.haaiGuestToken, installId };
     }
-    if (installId !== local.haaiInstallId) await storageSet(chrome.storage.local, { haaiInstallId: installId });
+    if (installId !== guest.haaiInstallId) await storageSet(chrome.storage.local, { haaiInstallId: installId });
     return issueGuestToken(apiBaseUrl, installId);
+  }
+
+  async function getManualKeyQuota() {
+    const stored = await storageGet(chrome.storage.local, { haaiManualApiKey: null });
+    if (typeof stored.haaiManualApiKey !== "string" || !stored.haaiManualApiKey) return { configured: false };
+    const config = await getConfig();
+    const apiBaseUrl = assertAllowedApiBase(config.apiBaseUrl);
+    if (!(await hasOriginPermission(apiBaseUrl))) throw new Error("Előbb mentsd el a backendcímet és engedélyezd a hozzáférést.");
+    return { configured: true, quota: await fetchQuota(apiBaseUrl, stored.haaiManualApiKey) };
+  }
+
+  async function saveManualApiKey(value) {
+    const manualApiKey = normalizeManualApiKey(value);
+    const config = await getConfig();
+    const apiBaseUrl = assertAllowedApiBase(config.apiBaseUrl);
+    if (!(await hasOriginPermission(apiBaseUrl))) throw new Error("Előbb mentsd el a backendcímet és engedélyezd a hozzáférést.");
+    const quota = await fetchQuota(apiBaseUrl, manualApiKey);
+    await storageSet(chrome.storage.local, { haaiManualApiKey: manualApiKey });
+    return quota;
   }
 
   async function requestOnce(url, payload, token) {
@@ -225,7 +279,8 @@
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
-        const error = new Error(typeof data?.error === "string" ? data.error.slice(0, 300) : `A backend ${response.status} hibát adott.`);
+        const error = new Error(typeof data?.message === "string" ? data.message.slice(0, 300)
+          : typeof data?.error === "string" ? data.error.slice(0, 300) : `A backend ${response.status} hibát adott.`);
         error.status = response.status;
         throw error;
       }
@@ -320,6 +375,18 @@
         await new Promise((resolve, reject) => chrome.storage.local.set({ apiBaseUrl, enableHomeMode }, () => chrome.runtime.lastError ? reject(new Error(chrome.runtime.lastError.message)) : resolve()));
         return { apiBaseUrl, enableHomeMode };
       })().then(config => respond({ ok: true, config }), error => respond({ ok: false, error: String(error.message || error) }));
+      return true;
+    }
+    if (message?.type === "HAAI_SAVE_MANUAL_KEY") {
+      saveManualApiKey(message.apiKey).then(quota => respond({ ok: true, quota }), error => respond({ ok: false, error: String(error.message || error) }));
+      return true;
+    }
+    if (message?.type === "HAAI_CLEAR_MANUAL_KEY") {
+      storageSet(chrome.storage.local, { haaiManualApiKey: "" }).then(() => respond({ ok: true }), error => respond({ ok: false, error: String(error.message || error) }));
+      return true;
+    }
+    if (message?.type === "HAAI_GET_QUOTA") {
+      getManualKeyQuota().then(result => respond({ ok: true, ...result }), error => respond({ ok: false, configured: true, error: String(error.message || error) }));
       return true;
     }
     if (message?.type === "HAAI_INTERPRET") {

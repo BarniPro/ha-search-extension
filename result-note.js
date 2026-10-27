@@ -37,15 +37,11 @@
           list.append(item);
         }
         notice.append(list);
-        const explanation = document.createElement('div');
-        explanation.textContent = 'A keresés a többi felismert feltétellel indult.';
-        explanation.style.cssText = 'margin-top:5px;color:#555;font-size:12px';
-        notice.append(explanation);
         box.append(notice);
 
         const back = document.createElement('button');
         back.type = 'button';
-        back.textContent = 'Vissza a keresőhöz';
+        back.textContent = 'Vissza';
         back.style.cssText = 'flex:none;padding:8px 12px;border:1px solid #ff4200;border-radius:4px;background:#ff4200;color:#fff;font:500 14px Roboto,Arial,sans-serif;cursor:pointer';
         back.addEventListener('click', () => {
           sessionStorage.removeItem('haai-return-query-v3');

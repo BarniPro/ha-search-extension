@@ -99,7 +99,7 @@ def main():
     print(f"Built extension at {OUTPUT}")
     print("Google OAuth: configured" if client_id else "Google OAuth: disabled (guest mode remains available)")
     print("B mode: build-enabled (popup and backend gates still required)" if enable_home_mode else "B mode: disabled in this build")
-    print(f"Backend origin: {backend_origin}" if backend_origin else "Backend origin: localhost/127.0.0.1 development only")
+    print(f"Backend origin: {backend_origin}" if backend_origin else "Backend origin: editable localhost development URL (default http://localhost:8080)")
 
 
 if __name__ == "__main__":

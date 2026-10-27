@@ -6,8 +6,12 @@ const crypto = require('node:crypto').webcrypto;
 
 const apiBaseUrl = process.argv[2];
 const useIpc = process.argv[3] === '--ipc';
-const extensionOrigin = 'chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-if (!apiBaseUrl || !useIpc) throw new Error('Run this check through the workspace-root verify-repositories.py harness.');
+const manualApiKey = process.argv[4];
+const extensionOrigin = process.env.HAAI_EXTENSION_ORIGIN || 'chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+const contractQuery = process.env.HAAI_TEST_QUERY || 'kombi 2018-tól';
+const expectedFilters = JSON.parse(process.env.HAAI_EXPECTED_FILTERS_JSON || '[{"n":"form[bodyType][]","v":"70"}]');
+if (!apiBaseUrl || !useIpc || !manualApiKey) throw new Error('Run this check through the workspace-root verify-repositories.py harness.');
+if (!Array.isArray(expectedFilters)) throw new Error('HAAI_EXPECTED_FILTERS_JSON must be an array.');
 const parsedBase = new URL(apiBaseUrl);
 if (!['127.0.0.1', 'localhost'].includes(parsedBase.hostname) || parsedBase.protocol !== 'http:') {
   throw new Error('This test is restricted to a local HTTP backend.');
@@ -95,14 +99,19 @@ const send = message => new Promise(resolve => {
 
   const interpreted = await send({
     type: 'HAAI_INTERPRET',
-    query: 'kombi 2018-tól',
+    query: contractQuery,
     mode: 'A',
     client_request_id: 'local-contract-check-001'
   });
   assert.equal(interpreted.ok, true, `extension client calls the backend: ${interpreted.error || ''}`);
   assert.equal(interpreted.data.mode, 'A');
   assert.ok(interpreted.data.request_id);
-  assert.ok(interpreted.data.filters.some(filter => filter.n === 'form[bodyType][]' && filter.v === '70'));
+  for (const expected of expectedFilters) {
+    assert.ok(interpreted.data.filters.some(filter =>
+      filter.n === expected.n && (expected.v === undefined || filter.v === expected.v) &&
+      (expected.value === undefined || filter.value === expected.value)
+    ), `expected live operation ${JSON.stringify(expected)}`);
+  }
   assert.ok(localData.haaiGuestToken, 'extension received and stored the guest bearer');
 
   const planResponse = await extensionFetch(`${apiBaseUrl}/v1/plans`, {
@@ -119,7 +128,28 @@ const send = message => new Promise(resolve => {
 
   const consumed = await send({ type: 'HAAI_CONSUME_PLAN', launchToken });
   assert.equal(consumed.ok, true, `extension consumes the backend plan: ${consumed.error || ''}`);
-  assert.ok(consumed.data.filters.some(filter => filter.n === 'form[bodyType][]' && filter.v === '70'));
+  for (const expected of expectedFilters) {
+    assert.ok(consumed.data.filters.some(filter =>
+      filter.n === expected.n && (expected.v === undefined || filter.v === expected.v) &&
+      (expected.value === undefined || filter.value === expected.value)
+    ), `expected handed-off operation ${JSON.stringify(expected)}`);
+  }
 
-  console.error('Local extension ↔ backend contract passed: CORS, guest auth, interpretation payload/response, and one-use plan handoff.');
+  const keySaved = await send({ type: 'HAAI_SAVE_MANUAL_KEY', apiKey: manualApiKey });
+  assert.equal(keySaved.ok, true, `extension validates and stores a manually issued API key: ${keySaved.error || ''}`);
+  assert.equal(keySaved.quota.remaining_requests, 1);
+  const keyQuota = await send({ type: 'HAAI_GET_QUOTA' });
+  assert.equal(keyQuota.ok, true);
+  assert.equal(keyQuota.quota.remaining_requests, 1);
+  const keySearch = await send({
+    type: 'HAAI_INTERPRET',
+    query: 'kombi 2018-tól',
+    mode: 'A',
+    client_request_id: 'manual-key-contract-001'
+  });
+  assert.equal(keySearch.ok, true, `extension calls the backend with its manual key: ${keySearch.error || ''}`);
+  const spentQuota = await send({ type: 'HAAI_GET_QUOTA' });
+  assert.equal(spentQuota.quota.remaining_requests, 0);
+
+  console.error('Local extension ↔ backend contract passed: CORS, guest auth, interpretation, one-use handoff, manual API-key auth, and remaining balance.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

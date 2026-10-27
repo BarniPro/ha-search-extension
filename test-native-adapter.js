@@ -22,9 +22,11 @@ Object.defineProperty(TestSelect.prototype, 'value', { get() { return this._valu
 
 const brandName = 'form[brandModel][brand][]';
 const modelName = 'form[brandModel][model][]';
+const adTypeName = 'form[adType][]';
 const fields = [
   new TestInput(brandName, 'checkbox', '122'),
   new TestInput(modelName, 'checkbox', '1392'),
+  new TestInput(adTypeName, 'checkbox', 'is_new_or_test'),
   new TestSelect('form[productionYear][from]', '', ['', '2018', '2019']),
   new TestInput('form[price][to]', 'number', ''),
   new TestInput('form[transmission][transmission][]', 'radio', 'A')
@@ -34,11 +36,12 @@ const form = { querySelectorAll: () => fields };
 const operations = adapter.validateOperations([
   { n: brandName, t: 'checkbox', v: '122' },
   { n: modelName, t: 'checkbox', v: '1392' },
+  { n: adTypeName, t: 'checkbox', v: 'is_new_or_test' },
   { n: 'form[productionYear][from]', t: 'option', v: '2018' },
   { n: 'form[price][to]', t: 'number', value: 4000000 },
   { n: 'form[transmission][transmission][]', t: 'radio', v: 'A' }
 ]);
-assert.equal(operations.length, 5);
+assert.equal(operations.length, 6);
 assert.throws(() => adapter.validateOperations([{ n: 'anything', t: 'selector', v: 'x' }]), /formátuma hibás/);
 assert.throws(() => adapter.validateOperations([{ n: 'x', t: 'number', value: Infinity }]), /értéke hibás/);
 assert.throws(() => adapter.validateOperations(Array.from({ length: 76 }, (_, i) => ({ n: `f${i}`, t: 'checkbox', v: '1' }))), /túl sok feltételt/);
@@ -48,9 +51,10 @@ assert.deepEqual(adapter.omissions([' kimaradt ', '', 'kimaradt', 12]), ['kimara
   await adapter.applyAdvanced(form, operations);
   assert.equal(fields[0].checked, true);
   assert.equal(fields[1].checked, true);
-  assert.equal(fields[2].value, '2018');
-  assert.equal(fields[3].value, '4000000');
-  assert.equal(fields[4].checked, true);
+  assert.equal(fields[2].checked, true);
+  assert.equal(fields[3].value, '2018');
+  assert.equal(fields[4].value, '4000000');
+  assert.equal(fields[5].checked, true);
   await assert.rejects(() => adapter.applyAdvanced(form, [{ n: 'form[price][to]', t: 'number', value: -1 }]), /Érvénytelen számérték/);
   await assert.rejects(() => adapter.applyAdvanced(form, [{ n: 'missing', t: 'checkbox', v: '1' }]), /Eltűnt vagy megváltozott mező/);
 

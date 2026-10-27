@@ -58,12 +58,19 @@ function reply(data, status = 200) { return { ok: status >= 200 && status < 300,
   assert.equal(harness.api.normalizeApiBase('http://localhost:8080'), 'http://localhost:8080');
   assert.throws(() => harness.api.normalizeApiBase('http://api.example.test'), /HTTPS szükséges/);
   assert.throws(() => harness.api.normalizeApiBase('https://api.example.test/path'), /gyökércímét/);
+  const defaultHarness = createHarness(async () => { throw new Error('No request expected'); }, {});
+  assert.equal((await defaultHarness.send({ type: 'HAAI_GET_CONFIG' })).config.apiBaseUrl, 'http://localhost:8080', 'Fresh local installs default to the backend development URL');
   const arbitraryHost = await harness.send({ type: 'HAAI_SAVE_CONFIG', apiBaseUrl: 'https://api.example.test' });
   assert.equal(arbitraryHost.ok, false, 'Development builds reject non-local backend origins before permission prompts');
+  const httpsLocal = await harness.send({ type: 'HAAI_SAVE_CONFIG', apiBaseUrl: 'https://localhost:8080' });
+  assert.equal(httpsLocal.ok, false, 'Development builds only request declared HTTP loopback host permissions');
+  const localAlternate = await harness.send({ type: 'HAAI_SAVE_CONFIG', apiBaseUrl: 'http://127.0.0.1:9090' });
+  assert.equal(localAlternate.ok, true, 'Development builds allow another explicit HTTP loopback backend URL');
 
   const productionOrigin = 'https://api.example.test:8443';
-  const productionHarness = createHarness(async () => { throw new Error('No request expected'); }, { apiBaseUrl: productionOrigin }, { version: 'test' }, false, productionOrigin);
+  const productionHarness = createHarness(async () => { throw new Error('No request expected'); }, {}, { version: 'test' }, false, productionOrigin);
   assert.equal((await productionHarness.send({ type: 'HAAI_GET_CONFIG' })).config.backendOrigin, productionOrigin);
+  assert.equal((await productionHarness.send({ type: 'HAAI_GET_CONFIG' })).config.apiBaseUrl, productionOrigin, 'Pinned production builds do not fall back to the local development URL');
   assert.equal((await productionHarness.send({ type: 'HAAI_SAVE_CONFIG', apiBaseUrl: productionOrigin })).ok, true);
   assert.equal((await productionHarness.send({ type: 'HAAI_SAVE_CONFIG', apiBaseUrl: 'https://other.example.test' })).ok, false, 'Production builds accept only their pinned backend origin');
 
@@ -85,6 +92,27 @@ function reply(data, status = 200) { return { ok: status >= 200 && status < 300,
   assert.deepEqual(consumeCall.payload, { launch_token: 'opaque.launch-token-123456' });
   assert.equal(consumeCall.options.headers.Authorization, undefined, 'one-use handoffs are consumed without account or guest authorization');
   assert.equal((await harness.send({ type: 'HAAI_GET_CONFIG' })).config.googleOAuthConfigured, false);
+
+  const manualApiKey = `haai_0123456789abcdef_${'a'.repeat(43)}`;
+  const manualCalls = [];
+  const manualHarness = createHarness(async (url, options) => {
+    manualCalls.push({ url, options });
+    if (url.endsWith('/v1/quota')) return reply({ principal_type: 'api_key', label: 'Pilot', remaining_requests: 12 });
+    if (url.endsWith('/v1/interpret')) return reply({ filters: [], omissions: [], mode: 'A', request_id: 'manual-key-request' });
+    throw new Error(`Unexpected URL ${url}`);
+  });
+  const savedKey = await manualHarness.send({ type: 'HAAI_SAVE_MANUAL_KEY', apiKey: manualApiKey });
+  assert.equal(savedKey.ok, true, 'manual key is checked with /v1/quota before it is stored');
+  assert.equal(manualHarness.localData.haaiManualApiKey, manualApiKey);
+  assert.equal((await manualHarness.send({ type: 'HAAI_GET_CONFIG' })).config.manualKeyConfigured, true);
+  const keyQuota = await manualHarness.send({ type: 'HAAI_GET_QUOTA' });
+  assert.equal(keyQuota.quota.remaining_requests, 12);
+  const manualInterpretation = await manualHarness.send({ type: 'HAAI_INTERPRET', query: 'volvo kombi' });
+  assert.equal(manualInterpretation.ok, true);
+  assert.equal(manualCalls.find(call => call.url.endsWith('/v1/interpret')).options.headers.Authorization, `Bearer ${manualApiKey}`);
+  const clearedKey = await manualHarness.send({ type: 'HAAI_CLEAR_MANUAL_KEY' });
+  assert.equal(clearedKey.ok, true);
+  assert.equal(manualHarness.localData.haaiManualApiKey, '');
 
   const homeCalls = [];
   const homeHarness = createHarness(async (url, options) => {

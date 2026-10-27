@@ -45,9 +45,7 @@
     const button = document.createElement('button'); button.className = 'submit'; button.type = 'submit';
     const buttonIcon = document.createElement('span'); buttonIcon.className = 'icon'; buttonIcon.setAttribute('aria-hidden', 'true'); buttonIcon.textContent = '✦';
     const buttonLabel = document.createElement('span'); buttonLabel.className = 'label'; buttonLabel.textContent = 'Keresés';
-    const progressTrack = document.createElement('span'); progressTrack.className = 'progress-track'; progressTrack.hidden = true; progressTrack.setAttribute('role', 'progressbar'); progressTrack.setAttribute('aria-label', 'A keresés becsült előrehaladása'); progressTrack.setAttribute('aria-valuemin', '0'); progressTrack.setAttribute('aria-valuemax', '100'); progressTrack.setAttribute('aria-valuenow', '0'); progressTrack.setAttribute('aria-valuetext', 'Becsült előrehaladás');
-    const progressFill = document.createElement('span'); progressFill.className = 'progress-fill'; progressTrack.append(progressFill);
-    button.append(buttonIcon, buttonLabel, progressTrack);
+    button.append(buttonIcon, buttonLabel);
     const status = document.createElement('div'); status.className = 'status'; status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
     const chipsBox = document.createElement('div'); chipsBox.className = 'chips';
     const helper = document.createElement('div'); helper.className = 'helper';
@@ -125,28 +123,7 @@
       if (reducedMotion || document.hidden || input.value) return;
       holdExample();
     });
-    let expectedDurationMs = globalThis.HAAILoadProgress?.DEFAULT_ESTIMATE_MS || 14000;
-    let loadingStartedAt = null, progressFrame = null;
-    const refreshExpectedDuration = () => {
-      try {
-        chrome.storage.local.get({ recentSearchDurations: null, lastPerformance: null, searchMode: 'advanced' }, data => {
-          if (chrome.runtime.lastError) return;
-          expectedDurationMs = globalThis.HAAILoadProgress.estimateDuration(data.recentSearchDurations, data.searchMode, data.lastPerformance);
-        });
-      } catch {}
-    };
-    refreshExpectedDuration();
-    chrome.storage.onChanged?.addListener(changes => {
-      if (changes.recentSearchDurations || changes.lastPerformance) refreshExpectedDuration();
-    });
-    const paintProgress = () => {
-      if (loadingStartedAt === null) return;
-      const value = globalThis.HAAILoadProgress.percent(performance.now() - loadingStartedAt, expectedDurationMs);
-      progressFill.style.width = `${value}%`;
-      progressTrack.setAttribute('aria-valuenow', String(value));
-      progressTrack.setAttribute('aria-valuetext', `Becsült előrehaladás: ${value}%`);
-      progressFrame = value < 96 ? requestAnimationFrame(paintProgress) : null;
-    };
+    let loadingStartedAt = null;
     const setLoading = loading => {
       button.disabled = loading;
       input.disabled = loading;
@@ -158,22 +135,17 @@
       buttonLabel.textContent = loading ? 'Keresés…' : 'Keresés';
       if (loading) {
         loadingStartedAt = performance.now();
-        progressTrack.hidden = false;
-        progressFill.style.width = '0%';
-        progressTrack.setAttribute('aria-valuenow', '0');
-        progressTrack.setAttribute('aria-valuetext', 'A keresés becsült előrehaladása');
-        progressFrame = requestAnimationFrame(paintProgress);
       } else {
         loadingStartedAt = null;
-        if (progressFrame !== null) cancelAnimationFrame(progressFrame);
-        progressFrame = null;
-        progressFill.style.width = '0%';
-        progressTrack.setAttribute('aria-valuenow', '0');
-        progressTrack.setAttribute('aria-valuetext', 'Becsült előrehaladás');
-        progressTrack.hidden = true;
       }
     };
-    const show = (message, kind = '') => { status.textContent = message; status.className = `status ${kind}`; status.setAttribute('role', 'status'); status.removeAttribute('aria-label'); };
+    const show = (message, kind = '') => {
+      status.textContent = message;
+      status.className = `status ${kind}`;
+      status.hidden = loadingStartedAt !== null && kind !== 'error';
+      status.setAttribute('role', 'status');
+      status.removeAttribute('aria-label');
+    };
     async function launchHomePlan(plan, record) {
       const filters = globalThis.HAAINativeAdapter.validateHomeOperations(plan.filters);
       const omissions = globalThis.HAAINativeAdapter.omissions(plan.omissions);
@@ -325,7 +297,7 @@
         await launchPlan(plan, record, enableHomeMode);
         return;
       } catch (error) {
-        show(`Nem indítottam keresést: ${error.message || String(error)}`, 'error');
+        show(`Nem sikerült elindítani a keresést: ${error.message || String(error)}`, 'error');
       } finally { setLoading(false); }
     });
 
@@ -353,7 +325,7 @@
         record('handoff_consumed', { requestId: plan.request_id });
         show('Beállítom a keresési szűrőket, majd megnyitom a találatokat…');
         await launchPlan(plan, record, homeEnabled);
-      }).catch(error => show(`Nem indítottam keresést: ${error.message || String(error)}`, 'error')).finally(() => setLoading(false));
+      }).catch(error => show(`Nem sikerült elindítani a keresést: ${error.message || String(error)}`, 'error')).finally(() => setLoading(false));
     }
   }
   let scheduled = false;

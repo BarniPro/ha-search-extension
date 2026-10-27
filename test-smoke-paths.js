@@ -17,7 +17,8 @@ assert.match(background, /\/v1\/auth\/google/);
 assert.match(background, /\/v1\/plans\/consume/);
 assert.match(background, /const mode = message\.mode === "B" && config\.enableHomeMode \? "B" : "A"/);
 assert.match(background, /\["A", "B"\]\.includes\(data\.mode\)/);
-assert.doesNotMatch(background, /https?:\/\/(?:localhost|127\.0\.0\.1):\d+/);
+assert.match(background, /apiBaseUrl: "http:\/\/localhost:8080"/);
+assert.doesNotMatch(background, /const CONFIGURED_BACKEND_ORIGIN = "https?:\/\/(?:localhost|127\.0\.0\.1):\d+"/);
 
 assert.match(content, /fragmentParams\.get\('haai_token'\)/);
 assert.match(content, /fragmentParams\.delete\('haai_token'\)/);
@@ -42,9 +43,11 @@ assert.ok(allScripts.includes('quick-search-ui.js'));
 assert.ok(allScripts.includes('advanced.js'));
 assert.ok(allScripts.includes('native-adapter.js'));
 assert.ok(manifest.content_scripts.every(entry => entry.matches.every(match => match.startsWith('https://www.hasznaltauto.hu/'))));
+const detailedSearchScript = manifest.content_scripts.find(entry => entry.matches.some(match => match.includes('/bovitettkereso/')));
+assert.equal(detailedSearchScript?.all_frames, true, 'Detailed-search adapter must run inside the hidden same-origin iframe');
 assert.ok(manifest.content_scripts[0].js.indexOf('quick-search-ui.js') < manifest.content_scripts[0].js.indexOf('content.js'));
 assert.deepEqual(manifest.optional_host_permissions, [
-  'http://localhost/*', 'https://localhost/*', 'http://127.0.0.1/*', 'https://127.0.0.1/*'
+  'http://localhost/*', 'http://127.0.0.1/*'
 ]);
 assert.match(adapter, /validateHomeOperations/);
 assert.match(adapter, /applyHomeSelect/);

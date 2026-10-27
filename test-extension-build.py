@@ -40,9 +40,10 @@ with tempfile.TemporaryDirectory(prefix="haai-build-", dir=ROOT) as temporary:
     assert not (plain / "intent.js").exists()
     assert "const ENABLE_HOME_MODE = false;" in (plain / "background.js").read_text()
     assert "const CONFIGURED_BACKEND_ORIGIN = \"\";" in (plain / "background.js").read_text()
+    assert 'apiBaseUrl: "http://localhost:8080"' in (plain / "background.js").read_text()
     assert "https://*/*" not in manifest["optional_host_permissions"]
     assert set(manifest["optional_host_permissions"]) == {
-        "http://localhost/*", "https://localhost/*", "http://127.0.0.1/*", "https://127.0.0.1/*"
+        "http://localhost/*", "http://127.0.0.1/*"
     }
 
     google = base / "google"
