@@ -51,10 +51,14 @@
   function resultNoticeKey(sender) {
     const tabId = sender?.tab?.id;
     if (!Number.isSafeInteger(tabId) || tabId < 0 || !chrome.storage.session) return null;
-    try {
-      const url = new URL(sender.url);
-      if (url.protocol !== "https:" || url.hostname !== "www.hasznaltauto.hu") return null;
-    } catch { return null; }
+    const senderUrls = [sender?.url, sender?.tab?.url].filter(value => typeof value === "string");
+    const hasAllowedOrigin = senderUrls.some(value => {
+      try {
+        const url = new URL(value);
+        return url.protocol === "https:" && ["www.hasznaltauto.hu", "hasznaltauto.hu"].includes(url.hostname);
+      } catch { return false; }
+    });
+    if (!hasAllowedOrigin) return null;
     return `haaiResultNotice:${tabId}`;
   }
 

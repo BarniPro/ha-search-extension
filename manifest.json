@@ -42,7 +42,8 @@
     },
     {
       "matches": [
-        "https://www.hasznaltauto.hu/*"
+        "https://www.hasznaltauto.hu/*",
+        "https://hasznaltauto.hu/*"
       ],
       "js": [
         "progress.js",
