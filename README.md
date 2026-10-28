@@ -23,7 +23,7 @@
 
 A HAHU kereső természetes nyelvű keresőmezőt ad a [Használtautó.hu](https://www.hasznaltauto.hu/kereso) oldalához. A leírásodból az oldal saját keresési feltételeit állítja be, majd megnyitja a találatokat.
 
-> automata Honda HR-V 7 millióig, 2019-től
+> honda jazz 2018-tol 3 millioig
 
 Egy mondatban megadhatod a márkát, a modellt, az árat, az évjáratot, a futásteljesítményt vagy a felszereltséget. Ékezetek nélkül is írhatsz. Ha egy feltételt nem sikerül beállítani, arról jelzés jelenik meg a találati oldalon. A mobilkép a Használtautó weboldal mobilnézetét mutatja; a bővítmény használatához asztali Chrome szükséges.
 
