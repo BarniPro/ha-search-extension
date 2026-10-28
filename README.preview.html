@@ -14,6 +14,7 @@
     p, li { font-size: 16px; line-height: 1.68; }
     a { color: #176a91; }
     .previews { margin-bottom: 34px; }
+    .previews figure+figure { margin-top: 20px; }
     figure { margin: 0; min-width: 0; }
     figcaption { margin: 0 0 8px; color: #52616e; font-size: 13px; font-weight: 650; }
     figure img { display: block; width: 100%; height: auto; border: 1px solid #e0e5e9; border-radius: 8px; }
@@ -49,6 +50,10 @@
       <figcaption>Asztali nézet · kivágott képernyőkép</figcaption>
       <img src="docs/screenshots/desktop-cropped.jpg" alt="Kivágott asztali képernyőkép a Használtautó keresőmezőjéről és szűrőiről">
     </figure>
+    <figure>
+      <figcaption>Valódi böngészős bemutató · szerkesztett lejátszás</figcaption>
+      <img src="docs/previews/desktop-demo.gif" alt="A HAHU kereső működés közben: golf 14tol 5mig">
+    </figure>
   </div>
   <p class="tagline">Írd le, milyen autót keresel. A bővítmény beállítja a szűrőket.</p>
   <p>A HAHU kereső természetes nyelvű keresőmezőt ad a <a href="https://www.hasznaltauto.hu/kereso">Használtautó.hu</a> oldalához. A leírásodból az oldal saját keresési feltételeit állítja be, majd megnyitja a találatokat.</p>
@@ -72,10 +77,9 @@
 
   <h2 id="adatvédelem-és-api-kulcsok">Adatvédelem és API-kulcsok</h2>
   <ul>
-    <li>A bővítmény az API-kulcsot a <code>GET /v1/quota</code> végponton ellenőrzi, majd az <code>Authorization</code> fejlécben küldi el. A kulcs a <code>chrome.storage.local</code> tárban marad meg, így a böngésző újraindítása után is elérhető. A böngészőprofilban ezért titkos adat van.</li>
-    <li>A kulcs bővítményből való eltávolítása csak az adott böngészőből törli azt. A szerveroldali visszavonást a fejlesztőtől kell kérni.</li>
-    <li>Az értelmezési kérés (<code>POST /v1/interpret</code>) csak a keresés szövegét, a módot és egy átláthatatlan kérésazonosítót küldi el. A keresés szövege az aktív oldal és kérés memóriájában marad; nem kerül URL-be vagy Chrome-tárhelyre.</li>
-    <li>A keresés átadásához a bővítmény a <code>POST /v1/plans/consume</code> végpontot használja. Az egyszer használatos token nem tartalmazza a keresés szövegét, és a felhasználása előtt eltávolítjuk az URL fragmentumából.</li>
+    <li>Az API-kulcs a szolgáltatás használatára jogosít, és ehhez kapcsolódik a keresési keret. A bővítmény a böngészőprofilban tárolja, ezért kezeld bizalmasan. Ha eltávolítod a bővítményből, csak erről az eszközről törlődik; a szerveroldali visszavonást a fejlesztőtől kérheted.</li>
+    <li>A beírt keresési szöveg a háttérrendszerhez, majd azon keresztül az OpenAI-hoz kerül feldolgozásra. A bővítmény API-kulcsa a háttérrendszerhez való hozzáférést azonosítja; nem ezt továbbítja az OpenAI-nak. Használat előtt olvasd el az <a href="https://openai.com/policies/services-agreement/">OpenAI API-ra vonatkozó feltételeket</a>.</li>
+    <li>Az éles szolgáltatás technikai naplói nem tartalmazzák a keresés szövegét. Az ismételt kérések kezeléséhez a szolgáltatás a sikeres keresés eredményét és néhány kapcsolódó adatot őriz meg. Az alapértelmezett megőrzési idő 24 óra; ezután automatikusan törli őket.</li>
   </ul>
 
   <h2 id="licenc">Licenc</h2>

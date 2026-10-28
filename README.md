@@ -10,6 +10,8 @@
 
 ![Kivágott asztali képernyőkép a Használtautó keresőmezőjéről és szűrőiről](docs/screenshots/desktop-cropped.jpg)
 
+![A HAHU kereső működés közben: golf 14tol 5mig](docs/previews/desktop-demo.gif)
+
 **Írd le, milyen autót keresel. A bővítmény beállítja a szűrőket.**
 
 A HAHU kereső természetes nyelvű keresőmezőt ad a [Használtautó.hu](https://www.hasznaltauto.hu/kereso) oldalához. A leírásodból az oldal saját keresési feltételeit állítja be, majd megnyitja a találatokat.
@@ -35,10 +37,9 @@ A keresés szövegét külső AI-szolgáltató dolgozza fel. Az AI tévedhet, ez
 
 ## Adatvédelem és API-kulcsok
 
-- A bővítmény az API-kulcsot a `GET /v1/quota` végponton ellenőrzi, majd az `Authorization` fejlécben küldi el. A kulcs a `chrome.storage.local` tárban marad meg, így a böngésző újraindítása után is elérhető. A böngészőprofilban ezért titkos adat van.
-- A kulcs bővítményből való eltávolítása csak az adott böngészőből törli azt. A szerveroldali visszavonást a fejlesztőtől kell kérni.
-- Az értelmezési kérés (`POST /v1/interpret`) csak a keresés szövegét, a módot és egy átláthatatlan kérésazonosítót küldi el. A keresés szövege az aktív oldal és kérés memóriájában marad; nem kerül URL-be vagy Chrome-tárhelyre.
-- A keresés átadásához a bővítmény a `POST /v1/plans/consume` végpontot használja. Az egyszer használatos token nem tartalmazza a keresés szövegét, és a felhasználása előtt eltávolítjuk az URL fragmentumából.
+- Az API-kulcs a szolgáltatás használatára jogosít, és ehhez kapcsolódik a keresési keret. A bővítmény a böngészőprofilban tárolja, ezért kezeld bizalmasan. Ha eltávolítod a bővítményből, csak erről az eszközről törlődik; a szerveroldali visszavonást a fejlesztőtől kérheted.
+- A beírt keresési szöveg a háttérrendszerhez, majd azon keresztül az OpenAI-hoz kerül feldolgozásra. A bővítmény API-kulcsa a háttérrendszerhez való hozzáférést azonosítja; nem ezt továbbítja az OpenAI-nak. Használat előtt olvasd el az [OpenAI API-ra vonatkozó feltételeket](https://openai.com/policies/services-agreement/).
+- Az éles szolgáltatás technikai naplói nem tartalmazzák a keresés szövegét. Az ismételt kérések kezeléséhez a szolgáltatás a sikeres keresés eredményét és néhány kapcsolódó adatot őriz meg. Az alapértelmezett megőrzési idő 24 óra; ezután automatikusan törli őket.
 
 ## Licenc
 
