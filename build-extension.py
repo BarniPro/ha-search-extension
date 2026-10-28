@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a loadable extension folder without shipping legacy analysis files."""
+"""Build the production extension bundle with one pinned HTTPS backend."""
 
 import json
 import os
@@ -16,6 +16,11 @@ OUTPUT = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / "dist"
 
 def runtime_files(manifest):
     files = [manifest["background"]["service_worker"], manifest["action"]["default_popup"]]
+    for icon_set in (manifest.get("icons", {}), manifest.get("action", {}).get("default_icon", {})):
+        if isinstance(icon_set, dict):
+            files.extend(icon_set.values())
+        elif isinstance(icon_set, str):
+            files.append(icon_set)
     popup = (ROOT / manifest["action"]["default_popup"]).read_text()
     files.extend(re.findall(r'<script\b[^>]*\bsrc=["\']([^"\']+)["\']', popup, re.IGNORECASE))
     for entry in manifest.get("content_scripts", []):
@@ -50,25 +55,11 @@ def parse_backend_origin(value):
 
 def main():
     manifest = json.loads((ROOT / "manifest.json").read_text())
-    client_id = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "").strip()
     backend_origin = parse_backend_origin(os.environ.get("BACKEND_ORIGIN", "").strip())
-    if backend_origin:
-        manifest["optional_host_permissions"] = [f"{backend_origin}/*"]
-    mode_flag = os.environ.get("ENABLE_HOME_MODE", "false").strip().lower()
-    if mode_flag not in {"", "0", "false", "no", "1", "true", "yes"}:
-        raise SystemExit("ENABLE_HOME_MODE must be true or false.")
-    enable_home_mode = mode_flag in {"1", "true", "yes"}
-    if client_id:
-        if not re.fullmatch(r"[0-9]+-[a-z0-9-]+\.apps\.googleusercontent\.com", client_id):
-            raise SystemExit("GOOGLE_OAUTH_CLIENT_ID is not a Google OAuth client ID.")
-        manifest["permissions"] = sorted(set(manifest.get("permissions", [])) | {"identity"})
-        manifest["oauth2"] = {
-            "client_id": client_id,
-            "scopes": [
-                "https://www.googleapis.com/auth/userinfo.email",
-                "https://www.googleapis.com/auth/userinfo.profile",
-            ],
-        }
+    if not backend_origin:
+        raise SystemExit("BACKEND_ORIGIN is required; this repository builds production extensions only.")
+    manifest.pop("optional_host_permissions", None)
+    manifest["host_permissions"] = [f"{backend_origin}/*"]
 
     if OUTPUT.exists() or OUTPUT.is_symlink():
         raise SystemExit(f"Output path already exists; refusing to overwrite it: {OUTPUT}")
@@ -81,25 +72,18 @@ def main():
         destination.parent.mkdir(parents=True, exist_ok=True)
         if relative == manifest["background"]["service_worker"]:
             contents = source.read_text()
-            if enable_home_mode:
-                marker = "const ENABLE_HOME_MODE = false;"
-                if contents.count(marker) != 1:
-                    raise SystemExit("Could not locate the extension home-mode build gate.")
-                contents = contents.replace(marker, "const ENABLE_HOME_MODE = true;", 1)
-            if backend_origin:
-                marker = 'const CONFIGURED_BACKEND_ORIGIN = "";'
-                if contents.count(marker) != 1:
-                    raise SystemExit("Could not locate the extension backend-origin build setting.")
-                contents = contents.replace(marker, f"const CONFIGURED_BACKEND_ORIGIN = {json.dumps(backend_origin)};", 1)
+            marker = 'const CONFIGURED_BACKEND_ORIGIN = "http://127.0.0.1:8080";'
+            if contents.count(marker) != 1:
+                raise SystemExit("Could not locate the extension backend-origin build setting.")
+            contents = contents.replace(marker, f"const CONFIGURED_BACKEND_ORIGIN = {json.dumps(backend_origin)};", 1)
             destination.write_text(contents)
             shutil.copystat(source, destination)
         else:
             shutil.copy2(source, destination)
     (OUTPUT / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     print(f"Built extension at {OUTPUT}")
-    print("Google OAuth: configured" if client_id else "Google OAuth: disabled (guest mode remains available)")
-    print("B mode: build-enabled (popup and backend gates still required)" if enable_home_mode else "B mode: disabled in this build")
-    print(f"Backend origin: {backend_origin}" if backend_origin else "Backend origin: editable localhost development URL (default http://localhost:8080)")
+    print("Authentication: API key only")
+    print(f"Backend origin: {backend_origin}")
 
 
 if __name__ == "__main__":

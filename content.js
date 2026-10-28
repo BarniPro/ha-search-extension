@@ -2,7 +2,7 @@
   if (globalThis.__HAAI_LOADED__) return;
   globalThis.__HAAI_LOADED__ = true;
   try {
-    for (const key of ['haai-pending-query-v2', 'haai-return-query-v3', 'haai-restore-origin-v3', 'haai-origin-state-v3', 'haai-origin-url-v3']) sessionStorage.removeItem(key);
+    for (const key of ['haai-pending-query-v2', 'haai-return-query-v3', 'haai-restore-origin-v3', 'haai-origin-state-v3', 'haai-origin-url-v3', 'haai-performance-v1']) sessionStorage.removeItem(key);
   } catch {}
   let pendingLaunchToken = null;
   try {
@@ -46,6 +46,10 @@
     const buttonIcon = document.createElement('span'); buttonIcon.className = 'icon'; buttonIcon.setAttribute('aria-hidden', 'true'); buttonIcon.textContent = '✦';
     const buttonLabel = document.createElement('span'); buttonLabel.className = 'label'; buttonLabel.textContent = 'Keresés';
     button.append(buttonIcon, buttonLabel);
+    const submitWrap = document.createElement('div'); submitWrap.className = 'submit-wrap';
+    const progress = document.createElement('div'); progress.className = 'progress'; progress.hidden = true; progress.setAttribute('role', 'progressbar'); progress.setAttribute('aria-label', 'Keresés folyamatban'); progress.setAttribute('aria-valuetext', 'A keresés folyamatban van');
+    const progressFill = document.createElement('div'); progressFill.className = 'progress-fill'; progressFill.setAttribute('aria-hidden', 'true'); progress.append(progressFill);
+    submitWrap.append(button, progress);
     const status = document.createElement('div'); status.className = 'status'; status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
     const chipsBox = document.createElement('div'); chipsBox.className = 'chips';
     const helper = document.createElement('div'); helper.className = 'helper';
@@ -57,13 +61,13 @@
     const helpTitle = document.createElement('h2'); helpTitle.id = 'haai-help-title'; helpTitle.className = 'help-title'; helpTitle.textContent = 'Hogyan működik?';
     const helpClose = document.createElement('button'); helpClose.type = 'button'; helpClose.className = 'help-close'; helpClose.setAttribute('aria-label', 'Magyarázat bezárása'); helpClose.textContent = '×';
     helpTop.append(helpTitle, helpClose);
-    const helpIntro = document.createElement('p'); helpIntro.textContent = 'Írd be, milyen autót szeretnél, majd kattints a Keresés gombra. A leírásodból beállítjuk a szűrőket, és rögtön megmutatjuk a találatokat.';
+    const helpIntro = document.createElement('p'); helpIntro.textContent = 'Írd le, milyen autót keresel, majd kattints a Keresés gombra. A szűrők beállítása után megnyílnak a találatok.';
     const helpExample = document.createElement('p'); helpExample.className = 'help-example';
     const exampleLabel = document.createElement('span'); exampleLabel.textContent = 'Például így is írhatod:';
-    const exampleText = document.createElement('strong'); exampleText.textContent = 'kombi leon 4mftig 14tol 180e km alatt'; helpExample.append(exampleLabel, exampleText);
-    const helpUnits = document.createElement('p'); helpUnits.textContent = 'Elég azt megadnod, ami fontos. Írhatsz röviden, ékezetek nélkül is. Az árat forintban (pl. 4m), a futást kilométerben (pl. 180e km) add meg.';
-    const helpNote = document.createElement('p'); helpNote.className = 'help-note'; helpNote.textContent = 'Ha egy feltételt nem tudunk beállítani, azt a találatoknál jelezzük. A többi feltétellel elindul a keresés.';
-    const helpDisclaimer = document.createElement('p'); helpDisclaimer.className = 'help-disclaimer'; helpDisclaimer.textContent = 'Az AI állítja be a szűrőket, de tévedhet. A keresés szövege a Használtautó AI backendjére, onnan pedig a beállított AI-szolgáltatóhoz kerül feldolgozásra. A backend nem naplózza és nem őrzi meg nyers keresési szövegként; a szolgáltató adatkezelésére és megőrzésére annak aktuális feltételei vonatkoznak.';
+    const exampleText = document.createElement('strong'); exampleText.textContent = 'automata Honda HR-V 7 millióig, 2019-től'; helpExample.append(exampleLabel, exampleText);
+    const helpUnits = document.createElement('p'); helpUnits.textContent = 'Elég azt megadnod, ami fontos. Röviden, ékezetek nélkül is írhatsz. Az árat forintban, a futást kilométerben add meg.';
+    const helpNote = document.createElement('p'); helpNote.className = 'help-note'; helpNote.textContent = 'Ha egy feltételt nem sikerült beállítani, arról a találati oldalon jelzést kapsz.';
+    const helpDisclaimer = document.createElement('p'); helpDisclaimer.className = 'help-disclaimer'; helpDisclaimer.textContent = 'A keresés szövegét külső AI-szolgáltató dolgozza fel. Az AI tévedhet, ezért ellenőrizd a beállított szűrőket és a találatokat.';
     helpPopup.append(helpTop, helpIntro, helpExample, helpUnits, helpNote, helpDisclaimer); helper.append(helperText, helpButton, helpPopup);
     const positionHelp = () => {
       if (!helpPopup.matches(':popover-open')) return;
@@ -84,7 +88,7 @@
     window.addEventListener('scroll', positionHelp, { passive: true });
     input.setAttribute('aria-describedby', helperText.id);
     const traditional = document.createElement('div'); traditional.className = 'traditional'; traditional.textContent = 'Hagyományos keresés';
-    field.append(label, input); form.append(field, button); panel.append(form, helper, status, chipsBox); shadow.append(panel, traditional);
+    field.append(label, input); form.append(field, submitWrap); panel.append(form, helper, status, chipsBox); shadow.append(panel, traditional);
     target.insertBefore(host, native);
     requestAnimationFrame(() => input.focus({ preventScroll: true }));
     const exampleQueries = globalThis.HAAIQuickSearchUI.examples;
@@ -123,7 +127,7 @@
       if (reducedMotion || document.hidden || input.value) return;
       holdExample();
     });
-    let loadingStartedAt = null;
+    let isLoading = false;
     const setLoading = loading => {
       button.disabled = loading;
       input.disabled = loading;
@@ -133,81 +137,17 @@
       buttonIcon.classList.toggle('spinner', loading);
       buttonIcon.textContent = loading ? '' : '✦';
       buttonLabel.textContent = loading ? 'Keresés…' : 'Keresés';
-      if (loading) {
-        loadingStartedAt = performance.now();
-      } else {
-        loadingStartedAt = null;
-      }
+      progress.hidden = !loading;
+      isLoading = loading;
     };
     const show = (message, kind = '') => {
       status.textContent = message;
       status.className = `status ${kind}`;
-      status.hidden = loadingStartedAt !== null && kind !== 'error';
+      status.hidden = isLoading && kind !== 'error';
       status.setAttribute('role', 'status');
       status.removeAttribute('aria-label');
     };
-    async function launchHomePlan(plan, record) {
-      const filters = globalThis.HAAINativeAdapter.validateHomeOperations(plan.filters);
-      const omissions = globalThis.HAAINativeAdapter.omissions(plan.omissions);
-      if (!filters.length) throw new Error('A B terv nem tartalmaz beállítható keresési feltételt.');
-      const frame = document.createElement('iframe');
-      frame.title = 'Főoldali keresési feltételek alkalmazása';
-      frame.setAttribute('aria-hidden', 'true');
-      frame.tabIndex = -1;
-      frame.style.cssText = 'position:fixed;left:-20000px;top:0;width:1200px;height:900px;visibility:hidden;pointer-events:none';
-      await new Promise((resolve, reject) => {
-        let finished = false;
-        let applying = false;
-        let submitted = false;
-        let routePoll;
-        const cleanup = () => { clearTimeout(timeout); clearInterval(routePoll); frame.remove(); };
-        const fail = error => {
-          if (finished) return;
-          finished = true; record('error'); cleanup(); reject(error);
-        };
-        const timeout = setTimeout(() => fail(new Error('A főoldali keresés időtúllépés miatt nem indult el. Próbáld újra.')), 100000);
-        const routeChange = async () => {
-          if (finished) return;
-          try {
-            const frameWindow = frame.contentWindow;
-            const frameDocument = frame.contentDocument;
-            if (!frameWindow || !frameDocument) return;
-            if (frameDocument.querySelector('[data-testid="save-search-button"]')) {
-              const target = frameWindow.location.href;
-              finished = true; record('filters_ready'); record('results_navigation'); cleanup();
-              location.assign(target); resolve(); return;
-            }
-            if (submitted || applying) return;
-            const path = frameWindow.location.pathname;
-            if (path !== '/' && !path.startsWith('/kereso')) return;
-            const form = globalThis.HAAINativeAdapter.findHomeForm(frameDocument);
-            if (!form) return;
-            applying = true;
-            record('filters_start');
-            show('Beállítom a keresési szűrőket, majd megnyitom a találatokat…');
-            await globalThis.HAAINativeAdapter.applyHome(frameDocument, filters);
-            const stored = await runtimeMessage({ type: 'HAAI_STORE_RESULT_NOTICE', omissions });
-            if (!stored.ok) throw new Error('A kihagyott feltételek jelzését nem sikerült biztonságosan átadni.');
-            record('filters_ready');
-            record('submit');
-            submitted = true;
-            globalThis.HAAINativeAdapter.submitHome(frameDocument);
-          } catch (error) { fail(error); }
-        };
-        frame.addEventListener('load', routeChange);
-        routePoll = setInterval(routeChange, 160);
-        record('background_open', { directHome: true });
-        show('Megnyitom a keresőt, majd beállítom a feltételeket…');
-        frame.src = new URL('/kereso', location.origin).href;
-        document.body.append(frame);
-      });
-    }
-
-    async function launchPlan(plan, record, homeEnabled = false) {
-      if (plan.mode === 'B') {
-        if (!homeEnabled) throw new Error('A B mód nincs engedélyezve ebben a buildben vagy a beállításokban.');
-        return launchHomePlan(plan, record);
-      }
+    async function launchPlan(plan) {
       if (plan.mode !== 'A') throw new Error('A visszaadott keresési mód nem támogatott.');
       const filters = globalThis.HAAINativeAdapter.validateOperations(plan.filters);
       const omissions = globalThis.HAAINativeAdapter.omissions(plan.omissions);
@@ -220,19 +160,17 @@
       frame.style.cssText = 'position:fixed;left:-20000px;top:0;width:1200px;height:900px;visibility:hidden;pointer-events:none';
       await new Promise((resolve, reject) => {
         let finished = false;
-        let detailOpen = false;
         let accepted = false;
         let routePoll;
         const cleanup = () => { clearTimeout(timeout); clearInterval(routePoll); window.removeEventListener('message', onFrameMessage); frame.remove(); };
         const fail = error => {
           if (finished) return;
-          finished = true; record('error'); cleanup(); reject(error);
+          finished = true; cleanup(); reject(error);
         };
         const onFrameMessage = event => {
           if (event.source !== frame.contentWindow || event.origin !== location.origin || event.data?.request_id !== framePlan.request_id) return;
           if (event.data.type === 'HAAI_PLAN_ACCEPTED') {
             accepted = true;
-            record('filters_start');
             show('Beállítom a keresési szűrőket, majd megnyitom a találatokat…');
           } else if (event.data.type === 'HAAI_PLAN_FAILED') {
             fail(new Error(typeof event.data.error === 'string' ? event.data.error : 'A részletes kereső nem tudta alkalmazni a feltételeket.'));
@@ -243,13 +181,12 @@
           if (finished) return;
           try {
             const path = frame.contentWindow.location.pathname;
-            if (path.startsWith('/talalatilista/')) {
+            if (path.startsWith('/talalatilista/') || frame.contentDocument?.querySelector('[data-testid="save-search-button"]')) {
               const target = frame.contentWindow.location.href;
-              finished = true; record('filters_ready'); record('results_navigation'); cleanup();
+              finished = true; cleanup();
               location.assign(target); resolve(); return;
             }
             if (path.startsWith('/bovitettkereso/')) {
-              if (!detailOpen) { detailOpen = true; record('detail_open'); }
               if (!accepted) frame.contentWindow.postMessage({ type: 'HAAI_APPLY_PLAN', plan: framePlan }, location.origin);
             }
           } catch (error) { fail(error); }
@@ -257,7 +194,6 @@
         window.addEventListener('message', onFrameMessage);
         frame.addEventListener('load', routeChange);
         routePoll = setInterval(routeChange, 180);
-        record('background_open', { directDetail: true });
         show('Megnyitom a keresőt, majd beállítom a feltételeket…');
         frame.src = new URL('/bovitettkereso/szemelyauto', location.origin).href;
         document.body.append(frame);
@@ -270,31 +206,16 @@
       const query = input.value.trim();
       if (query.length < 3) { show('Írj be legalább néhány szót.', 'error'); return; }
       setLoading(true); chipsBox.replaceChildren(); show('Értelmezem a keresési feltételeket… Ez eltarthat néhány másodpercig.');
-      const started = performance.now();
-      const trace = { version: chrome.runtime.getManifest().version, startedAt: new Date().toISOString(), events: [] };
-      const record = (stage, details = {}) => {
-        trace.events.push({ stage, elapsedMs: Math.round(performance.now() - started), ...details });
-        try { sessionStorage.setItem('haai-performance-v1', JSON.stringify(trace)); } catch {}
-        chrome.storage.local.set({ lastPerformance: trace });
-      };
-      record('start');
       try {
         await runtimeMessage({ type: 'HAAI_STORE_RESULT_NOTICE', omissions: [] });
-        const clientConfig = await runtimeMessage({ type: 'HAAI_GET_CONFIG' });
-        if (!clientConfig.ok) throw new Error('A bővítmény beállításait nem sikerült betölteni.');
-        const enableHomeMode = clientConfig.config?.enableHomeMode === true;
-        const requestedMode = enableHomeMode ? 'B' : 'A';
-        trace.mode = enableHomeMode ? 'home' : 'advanced';
-        record('mode_selected', { mode: requestedMode });
-        record('interpret_start');
+        const requestedMode = 'A';
         const response = await runtimeMessage({ type: 'HAAI_INTERPRET', query, mode: requestedMode, client_request_id: requestId() });
-        if (!response.ok) throw new Error(response.error || 'A backend nem érhető el.');
+        if (!response.ok) throw new Error(response.error || 'A keresés most nem érhető el. Próbáld újra később.');
         const plan = response.data;
-        if (!plan || !Array.isArray(plan.filters) || !Array.isArray(plan.omissions) || typeof plan.mode !== 'string') throw new Error('A backend válasza nem felel meg az API-szerződésnek.');
-        record('interpret_end', { requestId: plan.request_id, timing: plan.timing, attempts: response.attempts });
-        if (!['A', 'B'].includes(plan.mode) || plan.mode !== requestedMode) throw new Error('A backend a kért keresési módtól eltérő tervet adott vissza. A szűrőket nem módosítottam.');
+        if (!plan || !Array.isArray(plan.filters) || !Array.isArray(plan.omissions) || typeof plan.mode !== 'string') throw new Error('A keresési feltételeket nem sikerült beolvasni.');
+        if (plan.mode !== requestedMode) throw new Error('A keresési feltételeket nem sikerült beállítani. Próbáld újra.');
         show('Értelmeztem a kérést. Beállítom a szűrőket és megnyitom a találatokat…');
-        await launchPlan(plan, record, enableHomeMode);
+        await launchPlan(plan);
         return;
       } catch (error) {
         show(`Nem sikerült elindítani a keresést: ${error.message || String(error)}`, 'error');
@@ -304,27 +225,12 @@
     if (pendingLaunchToken) {
       const token = pendingLaunchToken; pendingLaunchToken = null;
       setLoading(true); show('Betöltöm a megosztott keresést, majd beállítom a szűrőket…');
-      const started = performance.now();
-      const trace = { version: chrome.runtime.getManifest().version, startedAt: new Date().toISOString(), mode: 'advanced', events: [] };
-      const record = (stage, details = {}) => {
-        trace.events.push({ stage, elapsedMs: Math.round(performance.now() - started), ...details });
-        try { sessionStorage.setItem('haai-performance-v1', JSON.stringify(trace)); } catch {}
-        chrome.storage.local.set({ lastPerformance: trace });
-      };
-      record('handoff_start');
       runtimeMessage({ type: 'HAAI_CONSUME_PLAN', launchToken: token }).then(async response => {
         if (!response.ok) throw new Error(response.error || 'A keresési hivatkozás nem használható.');
         const plan = response.data;
-        if (!plan || !Array.isArray(plan.filters) || !Array.isArray(plan.omissions) || !['A', 'B'].includes(plan.mode)) throw new Error('A megosztott keresés nem támogatott formátumú.');
-        let homeEnabled = false;
-        if (plan.mode === 'B') {
-          const config = await runtimeMessage({ type: 'HAAI_GET_CONFIG' });
-          homeEnabled = config.ok && config.config?.enableHomeMode === true;
-          if (trace.mode !== 'home') { trace.mode = 'home'; record('mode_selected', { mode: 'B' }); }
-        }
-        record('handoff_consumed', { requestId: plan.request_id });
+        if (!plan || !Array.isArray(plan.filters) || !Array.isArray(plan.omissions) || plan.mode !== 'A') throw new Error('A megosztott keresés nem támogatott formátumú.');
         show('Beállítom a keresési szűrőket, majd megnyitom a találatokat…');
-        await launchPlan(plan, record, homeEnabled);
+        await launchPlan(plan);
       }).catch(error => show(`Nem sikerült elindítani a keresést: ${error.message || String(error)}`, 'error')).finally(() => setLoading(false));
     }
   }

@@ -1,16 +1,39 @@
 (() => {
-  // SEO result pages can use arbitrary paths; identify them by their native UI.
-  if (!document.querySelector('[data-testid="save-search-button"]')) return;
+  const marker = '[data-testid="save-search-button"]';
 
-  const noticePromise = new Promise(resolve => {
-    try {
-      chrome.runtime.sendMessage({ type: 'HAAI_CONSUME_RESULT_NOTICE' }, response => {
-        resolve(chrome.runtime.lastError ? null : response || null);
+  function consumeNotice() {
+    return new Promise(resolve => {
+      try {
+        chrome.runtime.sendMessage({ type: 'HAAI_CONSUME_RESULT_NOTICE' }, response => {
+          resolve(chrome.runtime.lastError ? null : response || null);
+        });
+      } catch { resolve(null); }
+    });
+  }
+
+  function waitForResultsMarker(timeoutMs = 12000) {
+    if (document.querySelector(marker)) return Promise.resolve(true);
+    return new Promise(resolve => {
+      let finished = false;
+      const observer = new MutationObserver(() => {
+        if (document.querySelector(marker)) finish(true);
       });
-    } catch { resolve(null); }
-  });
+      const timeout = setTimeout(() => finish(false), timeoutMs);
+      function finish(found) {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timeout);
+        observer.disconnect();
+        resolve(found);
+      }
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+    });
+  }
 
-  noticePromise.then(data => {
+  waitForResultsMarker().then(async found => {
+    if (!found) return null;
+    return consumeNotice();
+  }).then(data => {
     if (!data?.ok || !Array.isArray(data.omissions)) return;
     const omissions = [...new Set(data.omissions.filter(x => typeof x === 'string' && x.trim()))].slice(0, 8);
 
@@ -54,25 +77,6 @@
         heading.parentElement.after(box);
       }
 
-      // Measure only after the native results page has had time to paint.
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        try {
-          const trace = JSON.parse(sessionStorage.getItem('haai-performance-v1'));
-          if (!Array.isArray(trace?.events) || !(trace.events.some(e => e.stage === 'results_navigation') || trace.mode === 'home' && trace.events.some(e => e.stage === 'submit')) || trace.events.some(e => e.stage === 'results_visible')) return;
-          const start = Date.parse(trace.startedAt);
-          if (!Number.isFinite(start)) return;
-          trace.events.push({ stage: 'results_visible', elapsedMs: Date.now() - start });
-          sessionStorage.setItem('haai-performance-v1', JSON.stringify(trace));
-          const progress = globalThis.HAAILoadProgress;
-          if (progress) {
-            chrome.storage.local.get({ recentSearchDurations: null }, stored => {
-              if (chrome.runtime.lastError) return;
-              const recentSearchDurations = progress.appendCompletedDuration(stored.recentSearchDurations, trace);
-              chrome.storage.local.set({ lastPerformance: trace, recentSearchDurations });
-            });
-          } else chrome.storage.local.set({ lastPerformance: trace });
-        } catch {}
-      }));
       return true;
     };
 

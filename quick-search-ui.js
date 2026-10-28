@@ -11,13 +11,18 @@
     :host .query:hover,#quick-search-mount .query:hover{border-color:#555}
     :host .query:focus,#quick-search-mount .query:focus{border:2px solid #218fbd;padding-left:13px}
     :host button,#quick-search-mount button{font:500 16px/28px Roboto,Helvetica,Arial,sans-serif;cursor:pointer}
-    :host .submit,#quick-search-mount .submit{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:138px;height:46px;padding:8px 16px;color:#fff;background:#ff4200;border:0;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,.18)}
+    :host .submit-wrap,#quick-search-mount .submit-wrap{display:flex;flex:0 0 138px;flex-direction:column;gap:4px;min-width:0}
+    :host .submit,#quick-search-mount .submit{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:7px;width:100%;min-width:0;height:46px;padding:8px 16px;color:#fff;background:#ff4200;border:0;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,.18)}
     :host .submit .icon,:host .submit .label,#quick-search-mount .submit .icon,#quick-search-mount .submit .label{position:relative;z-index:1}
     :host .submit .icon,#quick-search-mount .submit .icon{font:19px/1 Georgia,serif}
     :host .submit .icon.spinner,#quick-search-mount .submit .icon.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.9);border-right-color:transparent;border-radius:50%;font-size:0;animation:haai-spin .8s linear infinite}
     @keyframes haai-spin{to{transform:rotate(360deg)}}
     :host .submit:hover,#quick-search-mount .submit:hover{background:#e63b00}
     :host .submit:disabled,#quick-search-mount .submit:disabled{opacity:.76;cursor:wait}
+    :host .progress,#quick-search-mount .progress{height:4px;overflow:hidden;border-radius:3px;background:#f0d1c6}
+    :host .progress[hidden],#quick-search-mount .progress[hidden]{display:none!important}
+    :host .progress-fill,#quick-search-mount .progress-fill{width:32%;height:100%;border-radius:inherit;background:#ff4200;animation:haai-progress 1.15s ease-in-out infinite}
+    @keyframes haai-progress{from{transform:translateX(-110%)}to{transform:translateX(330%)}}
     :host .query:disabled,#quick-search-mount .query:disabled{background:#f4f4f4;color:#666;cursor:wait;opacity:.8}
     :host .helper,#quick-search-mount .helper{margin-top:6px;font-size:11px;line-height:1.5;color:#666}
     :host .help-button,#quick-search-mount .help-button{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;width:28px;height:28px;margin:-4px 0 -4px 2px;padding:0;border:0;border-radius:50%;background:transparent;color:#218fbd}
@@ -44,8 +49,9 @@
     :host .chips,#quick-search-mount .chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
     :host .chips:empty,#quick-search-mount .chips:empty{display:none}
     :host .chip,#quick-search-mount .chip{display:inline-block;background:#fff;border:1px solid #d4d4d4;border-radius:3px;padding:3px 7px;font-size:11px;color:#444}
-    @media(max-width:580px){:host form,#quick-search-mount form{gap:7px}:host .query,#quick-search-mount .query{font-size:14px}:host .submit,#quick-search-mount .submit{min-width:96px;font-size:14px;padding:7px 10px}}
+    @media(max-width:580px){:host form,#quick-search-mount form{gap:7px}:host .query,#quick-search-mount .query{font-size:14px}:host .submit-wrap,#quick-search-mount .submit-wrap{flex-basis:96px}:host .submit,#quick-search-mount .submit{font-size:14px;padding:7px 10px}}
     @media(prefers-reduced-motion:reduce){:host .submit .icon.spinner,#quick-search-mount .submit .icon.spinner{animation:none;border-right-color:rgba(255,255,255,.9)}}
+    @media(prefers-reduced-motion:reduce){:host .progress-fill,#quick-search-mount .progress-fill{width:100%;animation:none;transform:none;background:repeating-linear-gradient(135deg,#ff4200 0 6px,#e63b00 6px 12px)}}
   `;
   const examples = Object.freeze([
     "opel astra benzines 2m alatt",

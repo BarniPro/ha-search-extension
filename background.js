@@ -1,33 +1,32 @@
 (() => {
-  const DEFAULTS = { apiBaseUrl: "http://localhost:8080", enableHomeMode: false, haaiManualApiKey: "" };
-  // Build-time gate. The shipped build keeps this false; a B-capable build is
-  // opt-in via ENABLE_HOME_MODE=true and still needs the popup and server gates.
-  const ENABLE_HOME_MODE = false;
-  const CLIENT_HOME_MODE_ENABLED = ENABLE_HOME_MODE;
-  const CONFIGURED_BACKEND_ORIGIN = "";
-  const ATTEMPT_TIMEOUT_MS = 45000;
+  const DEFAULTS = { haaiManualApiKey: "" };
+  const CONFIGURED_BACKEND_ORIGIN = "http://127.0.0.1:8080";
+  const ATTEMPT_TIMEOUT_MS = 30000;
   const MAX_ATTEMPTS = 2;
   const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);
 
+  chrome.runtime.onInstalled.addListener(() => {
+    chrome.storage.local.remove(["lastPerformance", "recentSearchDurations", "apiBaseUrl", "enableHomeMode", "haaiInstallId", "haaiGuestToken", "haaiGuestTokenExpiresAt"]);
+    chrome.storage.session?.remove(["haaiAccountToken", "haaiAccountTokenExpiresAt"]);
+  });
+
   function normalizeApiBase(value) {
-    if (typeof value !== "string" || value.length > 300) throw new Error("Add meg a backend címét.");
+    if (typeof value !== "string" || value.length > 300) throw new Error("A keresés beállításai nem érvényesek.");
     let url;
     try { url = new URL(value.trim()); }
-    catch { throw new Error("A backend címe nem érvényes URL."); }
-    const local = ["localhost", "127.0.0.1"].includes(url.hostname);
-    if (url.protocol !== "https:" && !(local && url.protocol === "http:")) throw new Error("A backendhez HTTPS szükséges; fejlesztéshez HTTP localhost vagy 127.0.0.1 használható.");
-    if (url.username || url.password || url.search || url.hash || url.pathname !== "/") throw new Error("Csak a backend gyökércímét add meg, útvonal és belépési adat nélkül.");
+    catch { throw new Error("A keresés beállításai nem érvényesek."); }
+    const isPinnedLocalDevelopmentOrigin = url.protocol === "http:" &&
+      url.origin === "http://127.0.0.1:8080";
+    if (url.protocol !== "https:" && !isPinnedLocalDevelopmentOrigin) {
+      throw new Error("A kereséshez biztonságos kapcsolat szükséges.");
+    }
+    if (url.username || url.password || url.search || url.hash || url.pathname !== "/") throw new Error("A keresés beállításai nem érvényesek.");
     return url.origin;
   }
 
   function assertAllowedApiBase(value) {
     const base = normalizeApiBase(value);
-    if (CONFIGURED_BACKEND_ORIGIN) {
-      if (base !== CONFIGURED_BACKEND_ORIGIN) throw new Error("Ez a build csak az előre beállított backendcímmel használható.");
-      return base;
-    }
-    const host = new URL(base).hostname;
-    if (new URL(base).protocol !== "http:" || !["localhost", "127.0.0.1"].includes(host)) throw new Error("Ebben a fejlesztői buildben csak HTTP localhost backend használható. Éles buildhez add meg a BACKEND_ORIGIN beállítást.");
+    if (!CONFIGURED_BACKEND_ORIGIN || base !== CONFIGURED_BACKEND_ORIGIN) throw new Error("A keresés most nem érhető el. Próbáld újra később.");
     return base;
   }
 
@@ -84,74 +83,12 @@
 
   async function getConfig() {
     const stored = await storageGet(chrome.storage.local, DEFAULTS);
-    const accountToken = await getBearerToken();
-    let apiBaseUrl = CONFIGURED_BACKEND_ORIGIN || DEFAULTS.apiBaseUrl;
-    try { if (typeof stored.apiBaseUrl === "string" && stored.apiBaseUrl) apiBaseUrl = assertAllowedApiBase(stored.apiBaseUrl); }
-    catch {}
+    const apiBaseUrl = assertAllowedApiBase(CONFIGURED_BACKEND_ORIGIN);
     return {
       apiBaseUrl,
-      backendOrigin: CONFIGURED_BACKEND_ORIGIN || null,
-      localBackendAllowed: !CONFIGURED_BACKEND_ORIGIN,
-      enableHomeMode: CLIENT_HOME_MODE_ENABLED && stored.enableHomeMode === true,
-      homeModeBuildEnabled: CLIENT_HOME_MODE_ENABLED,
-      googleOAuthConfigured: Boolean(oauthClientId()),
-      signedIn: Boolean(accountToken),
+      backendOrigin: CONFIGURED_BACKEND_ORIGIN,
       manualKeyConfigured: typeof stored.haaiManualApiKey === "string" && stored.haaiManualApiKey.length > 0
     };
-  }
-
-  async function getBearerToken() {
-    // The optional signed-in account token is kept only for this browser session.
-    if (!chrome.storage.session) return null;
-    const value = await storageGet(chrome.storage.session, { haaiAccountToken: null, haaiAccountTokenExpiresAt: 0 });
-    const token = value.haaiAccountToken;
-    return typeof token === "string" && token.length > 0 && token.length <= 8192 && Number(value.haaiAccountTokenExpiresAt) > Date.now() + 30000 ? token : null;
-  }
-
-  function oauthClientId() {
-    try { return chrome.runtime.getManifest().oauth2?.client_id || ""; }
-    catch { return ""; }
-  }
-
-  async function googleLogin() {
-    if (!oauthClientId()) throw new Error("A Google-belépés nincs konfigurálva ebben a buildben.");
-    if (!chrome.identity?.getAuthToken) throw new Error("A Chrome Identity API nem érhető el.");
-    const config = await getConfig();
-    const apiBaseUrl = assertAllowedApiBase(config.apiBaseUrl);
-    if (!(await hasOriginPermission(apiBaseUrl))) throw new Error("Előbb mentsd el a backendcímet a bővítmény beállításaiban.");
-    const googleToken = await new Promise((resolve, reject) => {
-      chrome.identity.getAuthToken({ interactive: true }, token => {
-        if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
-        if (!token) return reject(new Error("A Google-belépés nem adott tokent."));
-        resolve(token);
-      });
-    });
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    try {
-      const response = await fetch(`${apiBaseUrl}/v1/auth/google`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify({ google_access_token: googleToken }),
-        signal: controller.signal,
-        cache: "no-store",
-        credentials: "omit",
-        redirect: "error"
-      });
-      const data = await response.json().catch(() => null);
-      if (!response.ok || typeof data?.access_token !== "string" || data.access_token.length > 8192 || typeof data.token_type !== "string" || data.token_type.toLowerCase() !== "bearer") {
-        throw new Error(typeof data?.error === "string" ? data.error.slice(0, 300) : `A belépés sikertelen (${response.status}).`);
-      }
-      if (!chrome.storage.session) throw new Error("A biztonságos munkamenet-tároló nem érhető el.");
-      const ttlSeconds = Number.isSafeInteger(data.expires_in) && data.expires_in > 0 && data.expires_in <= 31_536_000 ? data.expires_in : 3600;
-      await storageSet(chrome.storage.session, { haaiAccountToken: data.access_token, haaiAccountTokenExpiresAt: Date.now() + ttlSeconds * 1000 });
-      return { principalType: typeof data.principal_type === "string" ? data.principal_type : "user" };
-    } finally { clearTimeout(timeout); }
-  }
-
-  async function googleLogout() {
-    if (chrome.storage.session) await new Promise(resolve => chrome.storage.session.remove(["haaiAccountToken", "haaiAccountTokenExpiresAt"], resolve));
-    return { signedIn: false };
   }
 
   function hasOriginPermission(origin) {
@@ -161,10 +98,10 @@
   }
 
   function normalizeManualApiKey(value) {
-    if (typeof value !== "string") throw new Error("Másold be az üzemeltetőtől kapott hozzáférési kulcsot.");
+    if (typeof value !== "string") throw new Error("Kérj API-kulcsot a fejlesztőtől, és másold be ide.");
     const key = value.trim();
     if (key.length > 200 || !/^haai_[a-f0-9]{16}_[A-Za-z0-9_-]{32,}$/.test(key)) {
-      throw new Error("A hozzáférési kulcs formátuma érvénytelen.");
+      throw new Error("Az API-kulcs formátuma érvénytelen.");
     }
     return key;
   }
@@ -182,9 +119,9 @@
         redirect: "error"
       });
       const data = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(typeof data?.message === "string" ? data.message : `A kulcs ellenőrzése sikertelen (${response.status}).`);
+      if (!response.ok) throw new Error(typeof data?.message === "string" ? data.message : `Az API-kulcs ellenőrzése sikertelen (${response.status}).`);
       if (data?.principal_type !== "api_key" || !Number.isSafeInteger(data.remaining_requests) || data.remaining_requests < 0) {
-        throw new Error("A backend nem adott vissza érvényes kulcskeretet.");
+        throw new Error("Az API-kulcshoz tartozó keresési keretet nem sikerült lekérni.");
       }
       return data;
     } finally { clearTimeout(timeout); }
@@ -192,55 +129,16 @@
 
   function validatePayload(data) {
     if (!data || typeof data !== "object" || !Array.isArray(data.filters) || !Array.isArray(data.omissions) || !["A", "B"].includes(data.mode) || typeof data.request_id !== "string") {
-      throw new Error("A backend válasza nem felel meg az API-szerződésnek.");
+      throw new Error("A keresési feltételeket nem sikerült beolvasni.");
     }
     return data;
   }
 
   async function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-  async function issueGuestToken(apiBaseUrl, installId = null) {
-    const stableInstallId = installId || randomId();
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    try {
-      const response = await fetch(`${apiBaseUrl}/v1/guest`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify({ install_id: stableInstallId }),
-        signal: controller.signal,
-        cache: "no-store",
-        credentials: "omit",
-        redirect: "error"
-      });
-      const data = await response.json().catch(() => null);
-      if (!response.ok || typeof data?.access_token !== "string" || data.access_token.length > 8192 || data.install_id !== stableInstallId || typeof data.token_type !== "string" || data.token_type.toLowerCase() !== "bearer") {
-        throw new Error(typeof data?.error === "string" ? data.error.slice(0, 300) : `Vendégmunkamenet hiba (${response.status}).`);
-      }
-      const ttlSeconds = Number.isSafeInteger(data.expires_in) && data.expires_in > 0 && data.expires_in <= 31_536_000 ? data.expires_in : 2_592_000;
-      await storageSet(chrome.storage.local, {
-        haaiInstallId: data.install_id,
-        haaiGuestToken: data.access_token,
-        haaiGuestTokenExpiresAt: Date.now() + ttlSeconds * 1000
-      });
-      return { kind: "guest", token: data.access_token, installId: data.install_id };
-    } finally { clearTimeout(timeout); }
-  }
-
-  async function getAuthorization(apiBaseUrl) {
+  async function getRequiredApiKey() {
     const local = await storageGet(chrome.storage.local, { haaiManualApiKey: null });
-    if (typeof local.haaiManualApiKey === "string" && local.haaiManualApiKey.length > 0) {
-      return { kind: "api_key", token: local.haaiManualApiKey };
-    }
-    const accountToken = await getBearerToken();
-    if (accountToken) return { kind: "user", token: accountToken };
-    const guest = await storageGet(chrome.storage.local, { haaiInstallId: null, haaiGuestToken: null, haaiGuestTokenExpiresAt: 0 });
-    const installId = typeof guest.haaiInstallId === "string" && guest.haaiInstallId.length >= 16 ? guest.haaiInstallId : randomId();
-    if (typeof guest.haaiGuestToken === "string" && guest.haaiGuestToken.length > 0 && Number(guest.haaiGuestTokenExpiresAt) > Date.now() + 60000 && installId === guest.haaiInstallId) {
-      return { kind: "guest", token: guest.haaiGuestToken, installId };
-    }
-    if (installId !== guest.haaiInstallId) await storageSet(chrome.storage.local, { haaiInstallId: installId });
-    return issueGuestToken(apiBaseUrl, installId);
+    return normalizeManualApiKey(local.haaiManualApiKey);
   }
 
   async function getManualKeyQuota() {
@@ -248,7 +146,7 @@
     if (typeof stored.haaiManualApiKey !== "string" || !stored.haaiManualApiKey) return { configured: false };
     const config = await getConfig();
     const apiBaseUrl = assertAllowedApiBase(config.apiBaseUrl);
-    if (!(await hasOriginPermission(apiBaseUrl))) throw new Error("Előbb mentsd el a backendcímet és engedélyezd a hozzáférést.");
+    if (!(await hasOriginPermission(apiBaseUrl))) throw new Error("A kereséshez szükséges hozzáférés ki van kapcsolva a Chrome bővítménybeállításaiban.");
     return { configured: true, quota: await fetchQuota(apiBaseUrl, stored.haaiManualApiKey) };
   }
 
@@ -256,7 +154,7 @@
     const manualApiKey = normalizeManualApiKey(value);
     const config = await getConfig();
     const apiBaseUrl = assertAllowedApiBase(config.apiBaseUrl);
-    if (!(await hasOriginPermission(apiBaseUrl))) throw new Error("Előbb mentsd el a backendcímet és engedélyezd a hozzáférést.");
+    if (!(await hasOriginPermission(apiBaseUrl))) throw new Error("A kereséshez szükséges hozzáférés ki van kapcsolva a Chrome bővítménybeállításaiban.");
     const quota = await fetchQuota(apiBaseUrl, manualApiKey);
     await storageSet(chrome.storage.local, { haaiManualApiKey: manualApiKey });
     return quota;
@@ -280,7 +178,7 @@
       const data = await response.json().catch(() => null);
       if (!response.ok) {
         const error = new Error(typeof data?.message === "string" ? data.message.slice(0, 300)
-          : typeof data?.error === "string" ? data.error.slice(0, 300) : `A backend ${response.status} hibát adott.`);
+          : typeof data?.error === "string" ? data.error.slice(0, 300) : "A keresés most nem sikerült. Próbáld újra később.");
         error.status = response.status;
         throw error;
       }
@@ -293,28 +191,22 @@
   async function interpret(message) {
     const config = await getConfig();
     const apiBaseUrl = assertAllowedApiBase(config.apiBaseUrl);
-    if (!(await hasOriginPermission(apiBaseUrl))) throw new Error("Nincs engedély a beállított backendcímhez. Nyisd meg a bővítmény beállításait, és mentsd el újra a címet.");
+    if (!(await hasOriginPermission(apiBaseUrl))) throw new Error("A kereséshez szükséges hozzáférés ki van kapcsolva a Chrome bővítménybeállításaiban.");
     if (typeof message.query !== "string" || message.query.trim().length < 3 || message.query.length > 500) throw new Error("A keresés szövege hiányzik vagy túl hosszú.");
-    const mode = message.mode === "B" && config.enableHomeMode ? "B" : "A";
+    const mode = "A";
     const requestId = typeof message.client_request_id === "string" && /^[a-zA-Z0-9._:-]{8,100}$/.test(message.client_request_id) ? message.client_request_id : randomId();
     const payload = { query: message.query.trim(), mode, client_request_id: requestId };
-    let auth = await getAuthorization(apiBaseUrl);
+    const apiKey = await getRequiredApiKey();
     let lastError;
     let attempts = 0;
     let transientRetries = 0;
-    let refreshedGuest = false;
     while (attempts < MAX_ATTEMPTS + 1) {
       attempts++;
       try {
-        const data = await requestOnce(`${apiBaseUrl}/v1/interpret`, payload, auth.token);
+        const data = await requestOnce(`${apiBaseUrl}/v1/interpret`, payload, apiKey);
         return { ok: true, data, attempts };
       } catch (error) {
         lastError = error;
-        if (error.status === 401 && auth.kind === "guest" && !refreshedGuest) {
-          refreshedGuest = true;
-          auth = await issueGuestToken(apiBaseUrl, auth.installId);
-          continue;
-        }
         const retryable = error.status ? RETRYABLE_STATUS.has(error.status) : true;
         if (transientRetries >= MAX_ATTEMPTS - 1 || !retryable) break;
         transientRetries++;
@@ -325,7 +217,7 @@
     return {
       ok: false,
       status: Number.isInteger(lastError?.status) ? lastError.status : 0,
-      error: timedOut ? "A backend nem válaszolt időben. Próbáld újra." : String(lastError?.message || "A backend most nem érhető el.").slice(0, 300),
+      error: timedOut ? "A keresés túl sokáig tartott. Próbáld újra." : String(lastError?.message || "A keresés most nem érhető el. Próbáld újra később.").slice(0, 300),
       attempts
     };
   }
@@ -335,7 +227,7 @@
     if (typeof token !== "string" || token.length < 16 || token.length > 512 || !/^[A-Za-z0-9._~-]+$/.test(token)) throw new Error("A keresésindító token hiányzik vagy hibás.");
     const config = await getConfig();
     const apiBaseUrl = assertAllowedApiBase(config.apiBaseUrl);
-    if (!(await hasOriginPermission(apiBaseUrl))) throw new Error("Nincs engedély a beállított backendcímhez.");
+    if (!(await hasOriginPermission(apiBaseUrl))) throw new Error("A kereséshez szükséges hozzáférés ki van kapcsolva a Chrome bővítménybeállításaiban.");
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     try {
@@ -364,17 +256,7 @@
       return true;
     }
     if (message?.type === "HAAI_GET_CONFIG") {
-      getConfig().then(config => respond({ ok: true, config }), () => respond({ ok: false, config: DEFAULTS }));
-      return true;
-    }
-    if (message?.type === "HAAI_SAVE_CONFIG") {
-      (async () => {
-        const apiBaseUrl = assertAllowedApiBase(message.apiBaseUrl);
-        if (!(await hasOriginPermission(apiBaseUrl))) throw new Error("A backend gazdagépéhez még nincs engedély.");
-        const enableHomeMode = CLIENT_HOME_MODE_ENABLED && message.enableHomeMode === true;
-        await new Promise((resolve, reject) => chrome.storage.local.set({ apiBaseUrl, enableHomeMode }, () => chrome.runtime.lastError ? reject(new Error(chrome.runtime.lastError.message)) : resolve()));
-        return { apiBaseUrl, enableHomeMode };
-      })().then(config => respond({ ok: true, config }), error => respond({ ok: false, error: String(error.message || error) }));
+      getConfig().then(config => respond({ ok: true, config }), error => respond({ ok: false, error: String(error.message || error) }));
       return true;
     }
     if (message?.type === "HAAI_SAVE_MANUAL_KEY") {
@@ -397,16 +279,7 @@
       consumePlan(message).then(data => respond({ ok: true, data }), error => respond({ ok: false, error: String(error.message || error) }));
       return true;
     }
-    if (message?.type === "HAAI_GOOGLE_LOGIN") {
-      googleLogin().then(result => respond({ ok: true, result }), error => respond({ ok: false, error: String(error.message || error) }));
-      return true;
-    }
-    if (message?.type === "HAAI_GOOGLE_LOGOUT") {
-      googleLogout().then(result => respond({ ok: true, result }), error => respond({ ok: false, error: String(error.message || error) }));
-      return true;
-    }
     return false;
   });
 
-  if (typeof globalThis !== "undefined" && typeof module !== "undefined") module.exports = { normalizeApiBase, validatePayload };
 })();

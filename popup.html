@@ -1,25 +1,20 @@
-<!doctype html><html lang="hu"><meta charset="utf-8"><title>Gyors keresés beállításai</title><style>
-body{width:340px;margin:0;padding:20px;color:#25303b;font:14px/1.5 system-ui,sans-serif}h1{font-size:18px;margin:0 0 8px}p{margin:7px 0;color:#627180}.mode{padding:10px 12px;border:1px solid #d6dce0;border-radius:6px;background:#f8fafb}.field{display:block;margin-top:14px;font-weight:600}input[type=url],input[type=password]{display:block;box-sizing:border-box;width:100%;margin-top:5px;padding:8px;border:1px solid #b9c2ca;border-radius:4px;font:13px system-ui}button{margin-top:10px;border:0;background:#ff4200;color:#fff;border-radius:4px;padding:8px 12px;cursor:pointer;font:600 13px system-ui}button.secondary{background:#687784;margin-left:5px}button:disabled{opacity:.65;cursor:wait}.status{min-height:20px;font-size:12px;color:#627180}.status.error{color:#a42f12}.status.ok{color:#326f32}details{margin-top:13px;border-top:1px solid #edf0f2;padding-top:10px}summary{cursor:pointer;color:#596875;font-size:12px}details label{display:block;margin-top:9px;font-size:12px}details p{font-size:11px}h2{font-size:14px;margin:18px 0 6px}table{width:100%;border-collapse:collapse;font-size:12px}td{padding:5px 0;border-bottom:1px solid #edf0f2}td:last-child{text-align:right;font-variant-numeric:tabular-nums}.total{color:#b73900;font-weight:700}#version{font-size:11px;color:#71808e}
+<!doctype html><html lang="hu"><meta charset="utf-8"><title>HAHU kereső</title><style>
+body{width:340px;margin:0;padding:20px;color:#25303b;font:14px/1.5 system-ui,sans-serif}h1{font-size:18px;margin:0 0 8px}h2{font-size:14px;margin:18px 0 6px}p{margin:7px 0;color:#627180}.guide{padding:10px 12px;border:1px solid #d6dce0;border-radius:6px;background:#f8fafb}.guide h2{margin-top:0}.guide ol{margin:7px 0 9px;padding-left:20px}.guide li{margin:5px 0}.guide-note{font-size:12px}.disclaimer{margin:10px 0 0;padding:9px 10px;border-left:3px solid #d58512;background:#fff8eb;color:#5c4b32;font-size:12px;line-height:1.5}input[type=password]{display:block;box-sizing:border-box;width:100%;margin-top:5px;padding:8px;border:1px solid #b9c2ca;border-radius:4px;font:13px system-ui}label{display:block;margin-top:14px;font-weight:600}button{margin-top:10px;border:0;background:#ff4200;color:#fff;border-radius:4px;padding:8px 12px;cursor:pointer;font:600 13px system-ui}button.secondary{background:#687784;margin-left:5px}button:disabled{opacity:.65;cursor:wait}.status{min-height:20px;font-size:12px;color:#627180}.status.error{color:#a42f12}.status.ok{color:#326f32}#version{font-size:11px;color:#71808e}
 </style><body>
-<h1>Gyors keresés</h1>
-<p class="mode"><strong>A · Részletes kereső</strong><br>Ez az alapértelmezett keresési út.</p>
-<label class="field" for="apiBaseUrl">Backend API cím</label>
-<input id="apiBaseUrl" type="url" inputmode="url" autocomplete="url" placeholder="http://localhost:8080" aria-describedby="apiHelp">
-<p id="apiHelp">Helyi fejlesztéshez az alapértelmezett cím: http://localhost:8080. Más helyi HTTP-címet is megadhatsz. Kereséshez nem kell OAuth- vagy szolgáltatói beállítás; a bővítmény vendégmunkamenetet kér a backendtől.</p>
-<button id="save" type="button">Backend cím mentése</button><p id="saved" class="status" role="status" aria-live="polite"></p>
-<h2>Használati kulcs</h2>
-<p>Ha kaptál hozzáférési kulcsot, itt állítsd be. A kulcs az eszközön marad, és ezzel számol a backend a kereséseknél.</p>
-<label class="field" for="manualApiKey">Hozzáférési kulcs</label>
+<h1>HAHU kereső</h1>
+<section class="guide" aria-labelledby="guideTitle">
+<h2 id="guideTitle">Így használd</h2>
+<ol><li>Kérj API-kulcsot a fejlesztőtől, és add meg alább.</li><li>Nyisd meg a <a href="https://www.hasznaltauto.hu/">Használtautó.hu</a> keresőjét, és írd le, milyen autót keresel. Például: „automata Honda HR-V 7 millióig, 2019-től”. Röviden, ékezetek nélkül is írhatsz.</li><li>Kattints a <strong>Keresés</strong> gombra. A szűrők beállítása után megnyílnak a találatok.</li></ol>
+<p class="guide-note">Ha egy feltételt nem sikerült beállítani, arról a találati oldalon jelzést kapsz.</p>
+<p class="disclaimer"><strong>Fontos tudnivaló:</strong> a keresés szövegét külső AI-szolgáltató dolgozza fel. Az AI tévedhet, ezért ellenőrizd a beállított szűrőket és a találatokat.</p>
+</section>
+<h2>API-kulcs</h2>
+<p>Az API-kulcsot a fejlesztőtől kérheted. Add meg itt a keresés használatához; ezen az eszközön tárolódik.</p>
+<label for="manualApiKey">API-kulcs</label>
 <input id="manualApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="haai_…" aria-describedby="keyHelp">
-<p id="keyHelp">A beállított kulcs előnyt élvez a vendégmunkamenettel és a Google-belépéssel szemben.</p>
-<button id="saveManualKey" type="button">Kulcs ellenőrzése és mentése</button><button id="clearManualKey" class="secondary" type="button" hidden>Kulcs törlése erről az eszközről</button>
+<p id="keyHelp">API-kulcs nélkül nem indítható keresés.</p>
+<button id="saveManualKey" type="button">API-kulcs ellenőrzése és mentése</button><button id="clearManualKey" class="secondary" type="button" hidden>API-kulcs törlése erről az eszközről</button>
 <p id="keyStatus" class="status" role="status" aria-live="polite"></p>
-<p id="keyBalance" class="status" role="status" aria-live="polite">Nincs beállított hozzáférési kulcs.</p>
-<div id="googleAuth" hidden><button id="googleLogin" type="button">Belépés Google-fiókkal</button><button id="googleLogout" type="button" hidden>Kijelentkezés</button><p id="authStatus" class="status" role="status" aria-live="polite"></p></div>
-<details><summary>Kísérleti beállítások</summary>
-<label><input id="enableHomeMode" type="checkbox"> B · Főoldali kereső engedélyezése</label>
-<p id="homeModeHelp">Az alapértelmezett buildben ki van kapcsolva. A B mód csak külön engedélyezett builddel, ezzel a kapcsolóval és a backend beállításával használható. Élesítés előtt élő HAHU űrlapon kell ellenőrizni.</p>
-</details>
-<h2>Utolsó keresés mérése</h2><div id="measurement" class="status">Még nincs mérés.</div>
-<button id="export" type="button">Mérési adatok mentése</button><p id="version"></p>
+<p id="keyBalance" class="status" role="status" aria-live="polite">Nincs beállított API-kulcs.</p>
+<p id="version"></p>
 <script src="popup.js"></script></body></html>
