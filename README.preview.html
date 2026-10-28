@@ -19,6 +19,9 @@
     figure img { display: block; width: 100%; height: auto; border: 1px solid #e0e5e9; border-radius: 8px; }
     .mobile img { max-height: 520px; object-fit: cover; object-position: top; }
     .tagline { color: #25303b; font-size: 21px; font-weight: 700; }
+    nav { margin: 20px 0 28px; padding: 14px 18px; border: 1px solid #e0e5e9; border-radius: 8px; background: #f8fafb; }
+    nav strong { display: block; margin-bottom: 6px; }
+    nav ul { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 0; }
     blockquote { margin: 18px 0; padding: 12px 18px; border-left: 4px solid #ff4200; background: #fff8f5; font-size: 18px; }
     code { padding: 2px 5px; border-radius: 4px; background: #f1f3f5; font-size: .9em; overflow-wrap: anywhere; }
     ol, ul { padding-left: 24px; }
@@ -46,12 +49,20 @@
       <img src="docs/screenshots/desktop-cropped.jpg" alt="Kivágott asztali képernyőkép a Használtautó keresőmezőjéről és szűrőiről">
     </figure>
   </div>
+  <nav aria-label="Tartalomjegyzék">
+    <strong>Tartalom</strong>
+    <ul>
+      <li><a href="#telepítés-github-release-ből">Telepítés GitHub Release-ből</a></li>
+      <li><a href="#adatvédelem-és-api-kulcsok">Adatvédelem és API-kulcsok</a></li>
+      <li><a href="#licenc">Licenc</a></li>
+    </ul>
+  </nav>
   <p class="tagline">Írd le, milyen autót keresel. A bővítmény beállítja a szűrőket.</p>
   <p>A HAHU kereső természetes nyelvű keresőmezőt ad a <a href="https://www.hasznaltauto.hu/kereso">Használtautó.hu</a> oldalához. A leírásodból az oldal saját keresési feltételeit állítja be, majd megnyitja a találatokat.</p>
   <blockquote>automata Honda HR-V 7 millióig, 2019-től</blockquote>
   <p>Egy mondatban megadhatod a márkát, a modellt, az árat, az évjáratot, a futásteljesítményt vagy a felszereltséget. Ékezetek nélkül is írhatsz. Ha egy feltételt nem sikerül beállítani, arról jelzés jelenik meg a találati oldalon. A mobilkép a Használtautó weboldal mobilnézetét mutatja; a bővítmény használatához asztali Chrome szükséges.</p>
 
-  <h2>Telepítés GitHub Release-ből</h2>
+  <h2 id="telepítés-github-release-ből">Telepítés GitHub Release-ből</h2>
   <p>A használathoz Chrome és a fejlesztőtől kapott API-kulcs kell. Backend-forráskódot vagy helyi backendtelepítést nem kell letöltened: a GitHub Release kiadási csomagja a működő backend címére lesz beállítva.</p>
   <ol>
     <li>A repó GitHub-oldalán nyisd meg a <strong>Releases</strong> részt, és töltsd le a legfrissebb kiadás ZIP-csomagját.</li>
@@ -61,7 +72,7 @@
   </ol>
   <p class="note">A keresés szövegét külső AI-szolgáltató dolgozza fel. Az AI tévedhet, ezért ellenőrizd a beállított szűrőket és a találatokat. Ha valamelyik feltételt nem sikerült beállítani, a találati oldalon erről is jelzés jelenik meg.</p>
 
-  <h2>Adatvédelem és API-kulcsok</h2>
+  <h2 id="adatvédelem-és-api-kulcsok">Adatvédelem és API-kulcsok</h2>
   <ul>
     <li>A bővítmény az API-kulcsot a <code>GET /v1/quota</code> végponton ellenőrzi, majd az <code>Authorization</code> fejlécben küldi el. A kulcs a <code>chrome.storage.local</code> tárban marad meg, így a böngésző újraindítása után is elérhető. A böngészőprofilban ezért titkos adat van.</li>
     <li>A kulcs bővítményből való eltávolítása csak az adott böngészőből törli azt. A szerveroldali visszavonást a fejlesztőtől kell kérni.</li>
@@ -69,7 +80,7 @@
     <li>A keresés átadásához a bővítmény a <code>POST /v1/plans/consume</code> végpontot használja. Az egyszer használatos token nem tartalmazza a keresés szövegét, és a felhasználása előtt eltávolítjuk az URL fragmentumából.</li>
   </ul>
 
-  <h2>Licenc</h2>
+  <h2 id="licenc">Licenc</h2>
   <p>A repó saját forráskódjára és eredeti dokumentációs anyagaira az <a href="LICENSE">MIT licenc</a> vonatkozik: bárki felhasználhatja, módosíthatja és terjesztheti a licenc feltételeinek betartásával. A Használtautó.hu felületét ábrázoló képernyőképek és a weboldalon megjelenő védjegyek a saját jogosultjaikhoz tartoznak; ezekre az MIT licenc nem ad további felhasználási jogot.</p>
 </main>
 </body>

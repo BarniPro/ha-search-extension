@@ -11,6 +11,12 @@
   </tr>
 </table>
 
+## Tartalom
+
+- [Telepítés GitHub Release-ből](#telepítés-github-release-ből)
+- [Adatvédelem és API-kulcsok](#adatvédelem-és-api-kulcsok)
+- [Licenc](#licenc)
+
 **Írd le, milyen autót keresel. A bővítmény beállítja a szűrőket.**
 
 A HAHU kereső természetes nyelvű keresőmezőt ad a [Használtautó.hu](https://www.hasznaltauto.hu/kereso) oldalához. A leírásodból az oldal saját keresési feltételeit állítja be, majd megnyitja a találatokat.
