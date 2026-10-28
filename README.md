@@ -1,71 +1,71 @@
-# HAHU kereső — Használtautó AI Search
+# HAHU kereső — természetes nyelvű autókeresés
 
 <table>
   <tr>
-    <th>Mobile screenshot</th>
-    <th>Desktop preview (illustrative)</th>
+    <th>Mobilnézet · képernyőkép</th>
+    <th>Asztali előnézet · illusztráció</th>
   </tr>
   <tr>
-    <td valign="top" width="25%"><img src="docs/screenshots/mobile.png" alt="Mobile layout of Használtautó.hu with the natural-language car search field above the standard filters" width="240"></td>
-    <td valign="top" width="75%"><img src="docs/previews/desktop.svg" alt="Illustrative desktop product preview, not a screenshot: a natural-language car search field above the standard Használtautó search filters" width="720"></td>
+    <td valign="top" width="25%"><img src="docs/screenshots/mobile.png" alt="A Használtautó.hu mobil elrendezése a természetes nyelvű keresőmezővel és a hagyományos szűrőkkel" width="240"></td>
+    <td valign="top" width="75%"><img src="docs/previews/desktop.svg" alt="Szemléltető asztali előnézet: a természetes nyelvű keresőmező a Használtautó szűrői fölött" width="720"></td>
   </tr>
 </table>
 
-**Describe the car you want. Let the extension set the filters.**
+**Írd le, milyen autót keresel. A bővítmény beállítja a szűrőket.**
 
-HAHU kereső adds a Hungarian natural-language search field to [Használtautó.hu](https://www.hasznaltauto.hu/kereso). It turns your description into the site's own search filters and opens the matching listings.
+A HAHU kereső természetes nyelvű keresőmezőt ad a [Használtautó.hu](https://www.hasznaltauto.hu/kereso) oldalához. A leírásodból az oldal saját keresési feltételeit állítja be, majd megnyitja a találatokat.
 
 > automata Honda HR-V 7 millióig, 2019-től
 
-Search by make, model, price, year, mileage, or equipment in one sentence. Short descriptions without Hungarian accents work too. If a condition cannot be applied, a notice appears on the results page. Above: an actual mobile screenshot and an illustrative desktop preview of the responsive interface.
+Egy mondatban megadhatod a márkát, a modellt, az árat, az évjáratot, a futásteljesítményt vagy a felszereltséget. Ékezetek nélkül is írhatsz. Ha egy feltételt nem sikerül beállítani, arról jelzés jelenik meg a találati oldalon. Fent a Használtautó mobilnézetének képernyőképe és egy szemléltető asztali előnézet látható.
 
-## Get started
+## Használat
 
-You need Chrome, a build configured for a running service, and an API key issued by the developer. The source checkout uses a local development service; see [Local development](#local-development).
+A bővítmény használatához Chrome, működő backend és a fejlesztőtől kapott API-kulcs szükséges. A forráskódban található bővítmény helyi fejlesztői backendhez van beállítva; lásd a [Helyi fejlesztés](#helyi-fejlesztés) részt.
 
-1. Open `chrome://extensions`, enable **Developer mode**, and select **Load unpacked**. Choose the configured extension folder (`dist/` for a production build).
-2. Open **HAHU kereső** from Chrome's extensions menu. Paste your API key and select **Ellenőrzés és mentés** to verify and save it. The popup shows your remaining searches.
-3. Open or reload the [Használtautó search page](https://www.hasznaltauto.hu/kereso), describe the car you want, and select **Keresés** beside the new field.
+1. Nyisd meg a `chrome://extensions` oldalt, kapcsold be a **Fejlesztői módot**, majd válaszd a **Kicsomagolt bővítmény betöltése** lehetőséget. Éles buildhez a beállított `dist/` mappát válaszd.
+2. Nyisd meg a Chrome bővítménymenüjéből a **HAHU kereső** panelt. Illeszd be az API-kulcsot, majd válaszd az **Ellenőrzés és mentés** gombot. A panelen a hátralévő keresések száma is látható.
+3. Nyisd meg vagy töltsd újra a [Használtautó keresőoldalát](https://www.hasznaltauto.hu/kereso), írd le, milyen autót keresel, majd kattints az új mező melletti **Keresés** gombra.
 
-The search text is processed by an external AI provider. AI can make mistakes: review the applied filters, results, and any notice about conditions that could not be applied.
+A keresés szövegét külső AI-szolgáltató dolgozza fel. Az AI tévedhet, ezért ellenőrizd a beállított szűrőket és a találatokat. Ha valamelyik feltételt nem sikerült beállítani, a találati oldalon erről is jelzés jelenik meg.
 
-## Production build
+## Éles build készítése
 
-Python 3.9 or newer is sufficient; no third-party dependencies are needed. Run from this repository with your service's exact HTTPS origin:
+A buildhez Python 3.9 vagy újabb verzió szükséges; külső Python-csomag nem kell. A parancsot ebből a repóból futtasd, a backend pontos HTTPS-címét megadva:
 
 ```sh
 BACKEND_ORIGIN='https://api.example.com' python3 build-extension.py dist
 ```
 
-Replace the example origin with your deployed service. It must have no path, query, credentials, or fragment. The build pins it into the extension and replaces the local backend host permission. Chrome requests this required access when the extension is installed; the origin is not shown in the extension UI. Never include credentials in a build.
+Cseréld le a példacímet a telepített backend címére. Csak az origin adható meg: útvonal, query, felhasználónév/jelszó és fragment nélkül. A build ezt a címet rögzíti a bővítményben, és lecseréli a helyi backend engedélyét. A Chrome a telepítéskor kéri a szükséges hozzáférést; a backend címe nem jelenik meg a felületen. API-kulcsot vagy más hitelesítő adatot soha ne tegyél a buildbe.
 
-The output is a Chrome-loadable folder. The builder refuses to overwrite an existing output path. For a Chrome Web Store ZIP, zip the **contents** of `dist/` so `manifest.json` is at the ZIP root.
+A kimeneti `dist/` mappa közvetlenül betölthető Chrome-ba. A build nem ír felül már létező kimeneti mappát. Chrome Web Store ZIP készítéséhez a `dist/` **tartalmát** tömörítsd, hogy a `manifest.json` a ZIP gyökerébe kerüljön.
 
-## Local development
+## Helyi fejlesztés
 
-Load this repository folder as an unpacked extension. The source is pinned to `http://127.0.0.1:8080` for development only. Its manifest grants that exact loopback origin, and the background worker rejects other HTTP origins. Production builds require a pinned HTTPS origin.
+A repó mappáját kicsomagolt bővítményként töltsd be. A forráskód kizárólag a `http://127.0.0.1:8080` címet használja fejlesztéshez. A manifest pontosan ezt a loopback origint engedélyezi, a háttérfolyamat pedig elutasítja az ettől eltérő HTTP-címeket. Éles buildhez rögzített HTTPS-cím szükséges.
 
-If you have the separate private service checked out at `../backend`, configure its `.env` with `PROVIDER_MODE=live` and a provider API key, then start it from that directory:
+Ha a külön, privát backend repó a `../backend` mappában van, állítsd be ott a `.env` fájlt `PROVIDER_MODE=live` értékkel és szolgáltatói API-kulccsal, majd indítsd el a Compose stacket a backend mappájából:
 
 ```sh
 docker compose up --build -d
 ```
 
-For a live-provider check, use the normal Compose stack; `compose.local.yaml` enables the mock provider. Save a developer-issued extension API key in the popup, then reload the extension and the Használtautó page after changes.
+Éles szolgáltatói ellenőrzéshez a normál Compose stacket használd; a `compose.local.yaml` mock providert kapcsol be. Add meg a bővítményhez a fejlesztőtől kapott API-kulcsot, majd változtatás után töltsd újra a bővítményt és a Használtautó oldalát.
 
-## Privacy and API keys
+## Adatvédelem és API-kulcsok
 
-- The extension API key is verified through `GET /v1/quota` and sent in the `Authorization` header. It is stored in `chrome.storage.local` and survives browser restarts, so treat the browser profile as holding a secret.
-- Removing a key in the popup removes it from the current browser only. Ask the developer to revoke the key separately.
-- Interpretation sends only the query, mode, and an opaque request ID to `POST /v1/interpret`. The query stays in active page/request memory; it is not placed in a URL or Chrome storage.
-- A search handoff uses `POST /v1/plans/consume`. Its one-use token contains no query text and is removed from the URL fragment before consumption.
+- A bővítmény az API-kulcsot a `GET /v1/quota` végponton ellenőrzi, majd az `Authorization` fejlécben küldi el. A kulcs a `chrome.storage.local` tárban marad meg, így a böngésző újraindítása után is elérhető. A böngészőprofilban ezért titkos adat van.
+- A kulcs bővítményből való eltávolítása csak az adott böngészőből törli azt. A szerveroldali visszavonást a fejlesztőtől kell kérni.
+- Az értelmezési kérés (`POST /v1/interpret`) csak a keresés szövegét, a módot és egy átláthatatlan kérésazonosítót küldi el. A keresés szövege az aktív oldal és kérés memóriájában marad; nem kerül URL-be vagy Chrome-tárhelyre.
+- A keresés átadásához a bővítmény a `POST /v1/plans/consume` végpontot használja. Az egyszer használatos token nem tartalmazza a keresés szövegét, és a felhasználása előtt eltávolítjuk az URL fragmentumából.
 
-## Repository scope
+## A repó tartalma
 
-This public repository contains the extension UI, Használtautó form adapter, and service API client. The extension uses the detailed Használtautó search path. `quick-search-ui.js` is maintained here; building does not read from a sibling web app.
+Ez a nyilvános repó a bővítmény felületét, a Használtautó űrlapadapterét és a backend API-kliensét tartalmazza. A bővítmény a Használtautó részletes keresési útvonalát használja. A `quick-search-ui.js` ebben a repóban van karbantartva; a build nem olvas másik webalkalmazásból.
 
-Prompting, vehicle matching, catalog snapshots, quotas, provider calls, and stored usage belong to the separate private service repository. Service source and provider credentials do not belong here. See that repository's API documentation for the complete contract and operator CLI.
+A promptkezelés, a járművek egyeztetése, a katalógus-pillanatképek, a kvóták, a szolgáltatói hívások és a használati adatok tárolása a különálló privát backend repóhoz tartoznak. A backend forráskódja és a szolgáltatói hitelesítő adatok nem valók ebbe a repóba. A teljes API-szerződésért és az üzemeltetési parancsokért lásd a backend repó dokumentációját.
 
-## License
+## Licenc
 
-There is no `LICENSE` file yet. Public visibility alone does not grant reuse rights; a license must be added before inviting third parties to reuse or redistribute the code.
+Ehhez a repóhoz még nem tartozik `LICENSE` fájl. A nyilvános elérhetőség önmagában nem ad újrafelhasználási jogot; külső felhasználás vagy terjesztés előtt licencet kell választani és hozzáadni.
