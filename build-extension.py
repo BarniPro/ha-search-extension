@@ -80,6 +80,10 @@ def main():
             shutil.copystat(source, destination)
         else:
             shutil.copy2(source, destination)
+    license_file = ROOT / "LICENSE"
+    if not license_file.is_file():
+        raise SystemExit("The extension LICENSE file is missing.")
+    shutil.copy2(license_file, OUTPUT / "LICENSE")
     (OUTPUT / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     print(f"Built extension at {OUTPUT}")
     print("Authentication: API key only")

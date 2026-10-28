@@ -39,7 +39,6 @@ A keresés szövegét külső AI-szolgáltató dolgozza fel. Az AI tévedhet, ez
 
 - Az API-kulcs a szolgáltatás használatára jogosít, és ehhez kapcsolódik a keresési keret. A bővítmény a böngészőprofilban tárolja, ezért kezeld bizalmasan. Ha eltávolítod a bővítményből, csak erről az eszközről törlődik; a szerveroldali visszavonást a fejlesztőtől kérheted.
 - A beírt keresési szöveg a háttérrendszerhez, majd azon keresztül az OpenAI-hoz kerül feldolgozásra. A bővítmény API-kulcsa a háttérrendszerhez való hozzáférést azonosítja; nem ezt továbbítja az OpenAI-nak. Használat előtt olvasd el az [OpenAI API-ra vonatkozó feltételeket](https://openai.com/policies/services-agreement/).
-- Az éles szolgáltatás technikai naplói nem tartalmazzák a keresés szövegét. Az ismételt kérések kezeléséhez a szolgáltatás a sikeres keresés eredményét és néhány kapcsolódó adatot őriz meg. Az alapértelmezett megőrzési idő 24 óra; ezután automatikusan törli őket.
 
 ## Licenc
 
