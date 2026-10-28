@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HAHU kereső — README előnézet</title>
   <style>
-    :root { color-scheme: light; font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #25303b; background: #f3f5f7; }
+    :root { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #25303b; background: #f3f5f7; }
     * { box-sizing: border-box; }
     body { margin: 0; padding: 32px 20px 64px; }
     main { width: min(100%, 960px); margin: 0 auto; padding: 36px 52px 52px; border: 1px solid #e0e5e9; border-radius: 12px; background: #fff; box-shadow: 0 8px 32px #25303b12; }
@@ -18,12 +18,9 @@
     figcaption { margin: 0 0 8px; color: #52616e; font-size: 13px; font-weight: 650; }
     figure img { display: block; width: 100%; height: auto; border: 1px solid #e0e5e9; border-radius: 8px; }
     .mobile img { max-height: 520px; object-fit: cover; object-position: top; }
-    .desktop img { aspect-ratio: 1200 / 660; }
     .tagline { color: #25303b; font-size: 21px; font-weight: 700; }
     blockquote { margin: 18px 0; padding: 12px 18px; border-left: 4px solid #ff4200; background: #fff8f5; font-size: 18px; }
     code { padding: 2px 5px; border-radius: 4px; background: #f1f3f5; font-size: .9em; overflow-wrap: anywhere; }
-    pre { overflow: auto; padding: 15px 18px; border-radius: 7px; color: #f5f7f9; background: #202a33; }
-    pre code { padding: 0; color: inherit; background: none; }
     ol, ul { padding-left: 24px; }
     li { margin: 7px 0; }
     .note { padding: 13px 16px; border-left: 4px solid #d58512; background: #fff8eb; }
@@ -44,37 +41,25 @@
       <figcaption>Mobilnézet · képernyőkép</figcaption>
       <img src="docs/screenshots/mobile.png" alt="A Használtautó.hu mobil elrendezése a természetes nyelvű keresőmezővel és a hagyományos szűrőkkel">
     </figure>
-    <figure class="desktop">
-      <figcaption>Asztali előnézet · illusztráció</figcaption>
-      <img src="docs/previews/desktop.svg" alt="Szemléltető asztali előnézet: a természetes nyelvű keresőmező a Használtautó szűrői fölött">
+    <figure>
+      <figcaption>Asztali nézet · kivágott képernyőkép</figcaption>
+      <img src="docs/screenshots/desktop-cropped.jpg" alt="Kivágott asztali képernyőkép a Használtautó keresőmezőjéről és szűrőiről">
     </figure>
   </div>
-
   <p class="tagline">Írd le, milyen autót keresel. A bővítmény beállítja a szűrőket.</p>
   <p>A HAHU kereső természetes nyelvű keresőmezőt ad a <a href="https://www.hasznaltauto.hu/kereso">Használtautó.hu</a> oldalához. A leírásodból az oldal saját keresési feltételeit állítja be, majd megnyitja a találatokat.</p>
   <blockquote>automata Honda HR-V 7 millióig, 2019-től</blockquote>
-  <p>Egy mondatban megadhatod a márkát, a modellt, az árat, az évjáratot, a futásteljesítményt vagy a felszereltséget. Ékezetek nélkül is írhatsz. Ha egy feltételt nem sikerül beállítani, arról jelzés jelenik meg a találati oldalon. Fent a Használtautó mobilnézetének képernyőképe és egy szemléltető asztali előnézet látható.</p>
+  <p>Egy mondatban megadhatod a márkát, a modellt, az árat, az évjáratot, a futásteljesítményt vagy a felszereltséget. Ékezetek nélkül is írhatsz. Ha egy feltételt nem sikerül beállítani, arról jelzés jelenik meg a találati oldalon. A mobilkép a Használtautó weboldal mobilnézetét mutatja; a bővítmény használatához asztali Chrome szükséges.</p>
 
-  <h2>Használat</h2>
-  <p>A bővítmény használatához Chrome, működő backend és a fejlesztőtől kapott API-kulcs szükséges. A forráskódban található bővítmény helyi fejlesztői backendhez van beállítva; lásd a <a href="#helyi-fejlesztes">Helyi fejlesztés</a> részt.</p>
+  <h2>Telepítés GitHub Release-ből</h2>
+  <p>A használathoz Chrome és a fejlesztőtől kapott API-kulcs kell. Backend-forráskódot vagy helyi backendtelepítést nem kell letöltened: a GitHub Release kiadási csomagja a működő backend címére lesz beállítva.</p>
   <ol>
-    <li>Nyisd meg a <code>chrome://extensions</code> oldalt, kapcsold be a <strong>Fejlesztői módot</strong>, majd válaszd a <strong>Kicsomagolt bővítmény betöltése</strong> lehetőséget. Éles buildhez a beállított <code>dist/</code> mappát válaszd.</li>
+    <li>A repó GitHub-oldalán nyisd meg a <strong>Releases</strong> részt, és töltsd le a legfrissebb kiadás ZIP-csomagját.</li>
+    <li>Csomagold ki egy állandó mappába. Chrome-ban nyisd meg a <code>chrome://extensions</code> oldalt, kapcsold be a <strong>Fejlesztői módot</strong>, majd válaszd a <strong>Kicsomagolt bővítmény betöltése</strong> lehetőséget. A kicsomagolt kiadási mappát válaszd ki.</li>
     <li>Nyisd meg a Chrome bővítménymenüjéből a <strong>HAHU kereső</strong> panelt. Illeszd be az API-kulcsot, majd válaszd az <strong>Ellenőrzés és mentés</strong> gombot. A panelen a hátralévő keresések száma is látható.</li>
     <li>Nyisd meg vagy töltsd újra a <a href="https://www.hasznaltauto.hu/kereso">Használtautó keresőoldalát</a>, írd le, milyen autót keresel, majd kattints az új mező melletti <strong>Keresés</strong> gombra.</li>
   </ol>
   <p class="note">A keresés szövegét külső AI-szolgáltató dolgozza fel. Az AI tévedhet, ezért ellenőrizd a beállított szűrőket és a találatokat. Ha valamelyik feltételt nem sikerült beállítani, a találati oldalon erről is jelzés jelenik meg.</p>
-
-  <h2>Éles build készítése</h2>
-  <p>A buildhez Python 3.9 vagy újabb verzió szükséges; külső Python-csomag nem kell. A parancsot ebből a repóból futtasd, a backend pontos HTTPS-címét megadva:</p>
-  <pre><code>BACKEND_ORIGIN='https://api.example.com' python3 build-extension.py dist</code></pre>
-  <p>Cseréld le a példacímet a telepített backend címére. Csak az origin adható meg: útvonal, query, felhasználónév/jelszó és fragment nélkül. A build ezt a címet rögzíti a bővítményben, és lecseréli a helyi backend engedélyét. A Chrome a telepítéskor kéri a szükséges hozzáférést; a backend címe nem jelenik meg a felületen. API-kulcsot vagy más hitelesítő adatot soha ne tegyél a buildbe.</p>
-  <p>A kimeneti <code>dist/</code> mappa közvetlenül betölthető Chrome-ba. A build nem ír felül már létező kimeneti mappát. Chrome Web Store ZIP készítéséhez a <code>dist/</code> <strong>tartalmát</strong> tömörítsd, hogy a <code>manifest.json</code> a ZIP gyökerébe kerüljön.</p>
-
-  <h2 id="helyi-fejlesztes">Helyi fejlesztés</h2>
-  <p>A repó mappáját kicsomagolt bővítményként töltsd be. A forráskód kizárólag a <code>http://127.0.0.1:8080</code> címet használja fejlesztéshez. A manifest pontosan ezt a loopback origint engedélyezi, a háttérfolyamat pedig elutasítja az ettől eltérő HTTP-címeket. Éles buildhez rögzített HTTPS-cím szükséges.</p>
-  <p>Ha a külön, privát backend repó a <code>../backend</code> mappában van, állítsd be ott a <code>.env</code> fájlt <code>PROVIDER_MODE=live</code> értékkel és szolgáltatói API-kulccsal, majd indítsd el a Compose stacket a backend mappájából:</p>
-  <pre><code>docker compose up --build -d</code></pre>
-  <p>Éles szolgáltatói ellenőrzéshez a normál Compose stacket használd; a <code>compose.local.yaml</code> mock providert kapcsol be. Add meg a bővítményhez a fejlesztőtől kapott API-kulcsot, majd változtatás után töltsd újra a bővítményt és a Használtautó oldalát.</p>
 
   <h2>Adatvédelem és API-kulcsok</h2>
   <ul>
@@ -84,12 +69,8 @@
     <li>A keresés átadásához a bővítmény a <code>POST /v1/plans/consume</code> végpontot használja. Az egyszer használatos token nem tartalmazza a keresés szövegét, és a felhasználása előtt eltávolítjuk az URL fragmentumából.</li>
   </ul>
 
-  <h2>A repó tartalma</h2>
-  <p>Ez a nyilvános repó a bővítmény felületét, a Használtautó űrlapadapterét és a backend API-kliensét tartalmazza. A bővítmény a Használtautó részletes keresési útvonalát használja. A <code>quick-search-ui.js</code> ebben a repóban van karbantartva; a build nem olvas másik webalkalmazásból.</p>
-  <p>A promptkezelés, a járművek egyeztetése, a katalógus-pillanatképek, a kvóták, a szolgáltatói hívások és a használati adatok tárolása a különálló privát backend repóhoz tartoznak. A backend forráskódja és a szolgáltatói hitelesítő adatok nem valók ebbe a repóba. A teljes API-szerződésért és az üzemeltetési parancsokért lásd a backend repó dokumentációját.</p>
-
   <h2>Licenc</h2>
-  <p>Ehhez a repóhoz még nem tartozik <code>LICENSE</code> fájl. A nyilvános elérhetőség önmagában nem ad újrafelhasználási jogot; külső felhasználás vagy terjesztés előtt licencet kell választani és hozzáadni.</p>
+  <p>A repó saját forráskódjára és eredeti dokumentációs anyagaira az <a href="LICENSE">MIT licenc</a> vonatkozik: bárki felhasználhatja, módosíthatja és terjesztheti a licenc feltételeinek betartásával. A Használtautó.hu felületét ábrázoló képernyőképek és a weboldalon megjelenő védjegyek a saját jogosultjaikhoz tartoznak; ezekre az MIT licenc nem ad további felhasználási jogot.</p>
 </main>
 </body>
 </html>
