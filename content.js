@@ -47,9 +47,10 @@
     const buttonLabel = document.createElement('span'); buttonLabel.className = 'label'; buttonLabel.textContent = 'Keresés';
     button.append(buttonIcon, buttonLabel);
     const submitWrap = document.createElement('div'); submitWrap.className = 'submit-wrap';
-    const progress = document.createElement('div'); progress.className = 'progress'; progress.hidden = true; progress.setAttribute('role', 'progressbar'); progress.setAttribute('aria-label', 'Keresés folyamatban'); progress.setAttribute('aria-valuetext', 'A keresés folyamatban van');
-    const progressFill = document.createElement('div'); progressFill.className = 'progress-fill'; progressFill.setAttribute('aria-hidden', 'true'); progress.append(progressFill);
-    submitWrap.append(button, progress);
+    const progress = document.createElement('span'); progress.className = 'progress'; progress.hidden = true; progress.setAttribute('aria-hidden', 'true');
+    const progressFill = document.createElement('span'); progressFill.className = 'progress-fill'; progress.append(progressFill);
+    button.append(progress);
+    submitWrap.append(button);
     const status = document.createElement('div'); status.className = 'status'; status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
     const chipsBox = document.createElement('div'); chipsBox.className = 'chips';
     const helper = document.createElement('div'); helper.className = 'helper';
@@ -134,8 +135,6 @@
       button.classList.toggle('loading', loading);
       button.setAttribute('aria-busy', String(loading));
       button.setAttribute('aria-label', loading ? 'Keresés folyamatban' : 'Keresés');
-      buttonIcon.classList.toggle('spinner', loading);
-      buttonIcon.textContent = loading ? '' : '✦';
       buttonLabel.textContent = loading ? 'Keresés…' : 'Keresés';
       progress.hidden = !loading;
       isLoading = loading;

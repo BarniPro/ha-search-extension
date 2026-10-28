@@ -2,71 +2,196 @@ function message(payload) {
   return new Promise(resolve => chrome.runtime.sendMessage(payload, response => resolve(chrome.runtime.lastError ? { ok: false, error: chrome.runtime.lastError.message } : response || { ok: false })));
 }
 
+const form = document.querySelector('#apiKeyForm');
+const keyInput = document.querySelector('#manualApiKey');
+const keyStatus = document.querySelector('#keyStatus');
+const quotaValue = document.querySelector('#quotaValue');
+const quotaDescription = document.querySelector('#quotaDescription');
+const refreshButton = document.querySelector('#refreshQuota');
+const saveButton = document.querySelector('#saveManualKey');
+const changeButton = document.querySelector('#changeManualKey');
+const clearButton = document.querySelector('#clearManualKey');
+const cancelButton = document.querySelector('#cancelKeyChange');
+const visibilityButton = document.querySelector('#toggleKeyVisibility');
+let configured = null;
+let mutating = false;
+let quotaLoading = false;
+let quotaRequestId = 0;
+
+function updateControls() {
+  refreshButton.disabled = !configured || mutating || quotaLoading;
+  [saveButton, changeButton, clearButton, cancelButton, visibilityButton, keyInput].forEach(control => { control.disabled = mutating || configured === null; });
+  saveButton.textContent = mutating ? 'Ellenőrzés…' : 'Ellenőrzés és mentés';
+  form.setAttribute('aria-busy', String(mutating));
+}
+
+function clearKeyInput() {
+  keyInput.value = '';
+  keyInput.type = 'password';
+  keyInput.removeAttribute('aria-invalid');
+  visibilityButton.textContent = 'Mutat';
+  visibilityButton.setAttribute('aria-label', 'Megadott API-kulcs megjelenítése');
+  visibilityButton.setAttribute('aria-pressed', 'false');
+}
+
+function setEditorOpen(open) {
+  form.hidden = !open;
+  changeButton.setAttribute('aria-expanded', String(open));
+  if (!open) clearKeyInput();
+}
+
+function setConfigured(value) {
+  configured = value;
+  document.querySelector('#savedKeyActions').hidden = !value;
+  document.querySelector('#savedKeyState').textContent = value ? 'Mentve ezen az eszközön' : 'Nincs megadva';
+  document.querySelector('#savedKeyState').className = value ? 'key-state ok' : 'key-state';
+  document.querySelector('#keyIntro').textContent = value
+    ? 'A kulcs ezen az eszközön van elmentve. Új kulcsot a fejlesztőtől kérhetsz.'
+    : 'Kérj API-kulcsot a fejlesztőtől a keresés használatához.';
+  document.querySelector('label[for="manualApiKey"]').textContent = value ? 'Új API-kulcs' : 'API-kulcs';
+  cancelButton.hidden = !value;
+  setEditorOpen(!value);
+  updateControls();
+}
+
+function setStatus(text, kind = '') {
+  keyStatus.textContent = text;
+  keyStatus.className = `status${kind ? ` ${kind}` : ''}`;
+}
+
+function renderQuota(quota) {
+  if (!Number.isSafeInteger(quota?.remaining_requests) || quota.remaining_requests < 0) throw new Error('A keresési keretet nem sikerült lekérni.');
+  quotaValue.textContent = quota.remaining_requests.toLocaleString('hu-HU');
+  quotaValue.className = quota.remaining_requests === 0 ? 'quota-value empty' : 'quota-value';
+  const label = typeof quota.label === 'string' && quota.label.trim() ? quota.label.trim() : '';
+  quotaDescription.textContent = quota.remaining_requests > 0
+    ? (label ? `API-kulcs: ${label}` : 'Ennyi keresés indítható a mentett API-kulccsal.')
+    : `Elfogyott a keresési keret. Kérj bővítést a fejlesztőtől.${label ? ` API-kulcs: ${label}` : ''}`;
+}
+
+function renderNoKey() {
+  quotaValue.textContent = '—';
+  quotaValue.className = 'quota-value';
+  quotaDescription.textContent = 'Adj meg egy API-kulcsot a kereséshez.';
+}
+
 async function refreshKeyQuota() {
-  const balance = document.querySelector('#keyBalance');
-  const result = await message({ type: 'HAAI_GET_QUOTA' });
-  if (!result.ok) {
-    balance.textContent = result.error || 'A kéréskeretet nem sikerült lekérni.';
-    balance.className = 'status error';
-    return;
+  const requestId = ++quotaRequestId;
+  quotaLoading = true;
+  quotaValue.textContent = '—';
+  quotaValue.className = 'quota-value';
+  quotaDescription.textContent = 'Keret lekérése…';
+  updateControls();
+  try {
+    const result = await message({ type: 'HAAI_GET_QUOTA' });
+    if (requestId !== quotaRequestId) return;
+    if (!result.ok) throw new Error(result.error || 'A keresési keretet nem sikerült lekérni.');
+    if (!result.configured) {
+      setConfigured(false);
+      renderNoKey();
+      return;
+    }
+    renderQuota(result.quota);
+  } catch (error) {
+    if (requestId !== quotaRequestId) return;
+    quotaValue.textContent = '—';
+    quotaDescription.textContent = error.message || 'A keresési keretet nem sikerült lekérni. Próbáld újra a Frissítés gombbal.';
+  } finally {
+    if (requestId === quotaRequestId) {
+      quotaLoading = false;
+      updateControls();
+    }
   }
-  if (!result.configured) {
-    balance.textContent = 'Nincs beállított API-kulcs.';
-    balance.className = 'status';
-    return;
-  }
-  const quota = result.quota;
-  if (!Number.isSafeInteger(quota?.remaining_requests) || quota.remaining_requests < 0) {
-    balance.textContent = 'A keresési keretet nem sikerült lekérni.';
-    balance.className = 'status error';
-    return;
-  }
-  balance.textContent = `${quota.label ? `${quota.label} · ` : ''}${quota.remaining_requests} keresés maradt.`;
-  balance.className = quota.remaining_requests > 0 ? 'status ok' : 'status error';
 }
 
 message({ type: 'HAAI_GET_CONFIG' }).then(result => {
-  if (!result.ok || !result.config?.backendOrigin) return;
-  refreshKeyQuota();
-  document.querySelector('#clearManualKey').hidden = !result.config.manualKeyConfigured;
-  const keyStatus = document.querySelector('#keyStatus');
-  keyStatus.textContent = result.config.manualKeyConfigured ? 'Van mentett API-kulcs ezen az eszközön.' : 'Kérj API-kulcsot a fejlesztőtől, majd add meg itt a kereséshez.';
+  if (!result.ok) {
+    quotaDescription.textContent = 'A keresési keretet nem sikerült lekérni.';
+    document.querySelector('#savedKeyState').textContent = 'Nem elérhető';
+    setStatus(result.error || 'A beállításokat nem sikerült betölteni. Nyisd meg újra a bővítményt.', 'error');
+    return;
+  }
+  setConfigured(Boolean(result.config?.manualKeyConfigured));
+  if (configured) refreshKeyQuota();
+  else renderNoKey();
 });
 
-document.querySelector('#saveManualKey').addEventListener('click', async event => {
-  const button = event.currentTarget;
-  const status = document.querySelector('#keyStatus');
-  const apiKey = document.querySelector('#manualApiKey').value;
-  if (!apiKey.trim()) {
-    status.textContent = 'Kérj API-kulcsot a fejlesztőtől, és másold be ide.'; status.className = 'status error'; return;
+form.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (mutating || configured === null) return;
+  const apiKey = keyInput.value.trim();
+  if (!apiKey) {
+    keyInput.setAttribute('aria-invalid', 'true');
+    setStatus('Másold be a fejlesztőtől kapott API-kulcsot.', 'error');
+    keyInput.focus();
+    return;
   }
-  button.disabled = true; status.textContent = 'API-kulcs ellenőrzése…'; status.className = 'status';
+  ++quotaRequestId;
+  quotaLoading = false;
+  mutating = true;
+  keyInput.removeAttribute('aria-invalid');
+  setStatus('API-kulcs ellenőrzése…');
+  updateControls();
   try {
     const result = await message({ type: 'HAAI_SAVE_MANUAL_KEY', apiKey });
     if (!result.ok) throw new Error(result.error || 'Az API-kulcs mentése nem sikerült.');
-    document.querySelector('#manualApiKey').value = '';
-    document.querySelector('#clearManualKey').hidden = false;
-    status.textContent = 'Az API-kulcs ellenőrizve és elmentve.'; status.className = 'status ok';
-    await refreshKeyQuota();
+    setConfigured(true);
+    renderQuota(result.quota);
+    setStatus('Az API-kulcs ellenőrizve és elmentve.', 'ok');
   } catch (error) {
-    status.textContent = error.message || 'Az API-kulcs ellenőrzése nem sikerült.'; status.className = 'status error';
-  } finally { button.disabled = false; }
+    keyInput.setAttribute('aria-invalid', 'true');
+    setStatus(error.message || 'Az API-kulcs ellenőrzése nem sikerült.', 'error');
+  } finally {
+    mutating = false;
+    updateControls();
+    if (form.hidden) changeButton.focus();
+    if (configured && quotaValue.textContent === '—') refreshKeyQuota();
+  }
 });
 
-document.querySelector('#clearManualKey').addEventListener('click', async event => {
-  const button = event.currentTarget;
-  const status = document.querySelector('#keyStatus');
-  button.disabled = true;
+changeButton.addEventListener('click', () => {
+  setEditorOpen(form.hidden);
+  setStatus('');
+  if (!form.hidden) keyInput.focus();
+});
+cancelButton.addEventListener('click', () => {
+  setEditorOpen(false);
+  setStatus('');
+  changeButton.focus();
+});
+visibilityButton.addEventListener('click', () => {
+  const visible = keyInput.type === 'password';
+  keyInput.type = visible ? 'text' : 'password';
+  visibilityButton.textContent = visible ? 'Elrejt' : 'Mutat';
+  visibilityButton.setAttribute('aria-label', visible ? 'Megadott API-kulcs elrejtése' : 'Megadott API-kulcs megjelenítése');
+  visibilityButton.setAttribute('aria-pressed', String(visible));
+});
+keyInput.addEventListener('input', () => keyInput.removeAttribute('aria-invalid'));
+refreshButton.addEventListener('click', refreshKeyQuota);
+
+clearButton.addEventListener('click', async () => {
+  if (mutating) return;
+  ++quotaRequestId;
+  quotaLoading = false;
+  mutating = true;
+  updateControls();
+  setStatus('API-kulcs eltávolítása…');
   try {
     const result = await message({ type: 'HAAI_CLEAR_MANUAL_KEY' });
-    if (!result.ok) throw new Error(result.error || 'Az API-kulcs törlése nem sikerült.');
-    button.hidden = true;
-    status.textContent = 'Az API-kulcs törölve erről az eszközről. A hozzáférés megszüntetéséhez kérd a fejlesztőt a kulcs visszavonására.';
-    status.className = 'status ok';
-    await refreshKeyQuota();
+    if (!result.ok) throw new Error(result.error || 'Az API-kulcs eltávolítása nem sikerült.');
+    clearKeyInput();
+    setConfigured(false);
+    renderNoKey();
+    setStatus('Az API-kulcs eltávolítva erről az eszközről. A kulcs visszavonását a fejlesztőtől kérheted.', 'ok');
   } catch (error) {
-    status.textContent = error.message || 'Az API-kulcs törlése nem sikerült.'; status.className = 'status error';
-  } finally { button.disabled = false; }
+    setStatus(error.message || 'Az API-kulcs eltávolítása nem sikerült.', 'error');
+  } finally {
+    mutating = false;
+    updateControls();
+    if (!configured) keyInput.focus();
+    if (configured && quotaValue.textContent === '—') refreshKeyQuota();
+  }
 });
 
+updateControls();
 document.querySelector('#version').textContent = `Bővítmény: ${chrome.runtime.getManifest().version}`;
