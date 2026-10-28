@@ -1,5 +1,7 @@
 # HAHU kereső — természetes nyelvű autókeresés
 
+> **Jogi nyilatkozat:** Ez egy független, nem hivatalos bővítmény. Sem a bővítmény, sem a fejlesztője nem áll kapcsolatban a Használtautó.hu-val, annak tulajdonosával vagy üzemeltetőjével.
+
 <table>
   <tr>
     <th>Mobilnézet · képernyőkép</th>
