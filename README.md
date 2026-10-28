@@ -1,31 +1,26 @@
 # HAHU kereső — természetes nyelvű autókeresés
 
-> **Jogi nyilatkozat:** Ez egy független, nem hivatalos bővítmény. Sem a bővítmény, sem a fejlesztője nem áll kapcsolatban a Használtautó.hu-val, annak tulajdonosával vagy üzemeltetőjével.
-
-<table>
-  <tr>
-    <th>Mobilnézet · képernyőkép</th>
-    <th>Asztali nézet · kivágott képernyőkép</th>
-  </tr>
-  <tr>
-    <td valign="top" width="25%"><img src="docs/screenshots/mobile.png" alt="A Használtautó.hu mobil elrendezése a természetes nyelvű keresőmezővel és a hagyományos szűrőkkel" width="240"></td>
-    <td valign="top" width="75%"><img src="docs/screenshots/desktop-cropped.jpg" alt="Kivágott asztali képernyőkép a Használtautó keresőmezőjéről és szűrőiről" width="720"></td>
-  </tr>
-</table>
-
-## Tartalom
+## Tartalomjegyzék
 
 - [Telepítés GitHub Release-ből](#telepítés-github-release-ből)
 - [Adatvédelem és API-kulcsok](#adatvédelem-és-api-kulcsok)
 - [Licenc](#licenc)
 
+> **Jogi nyilatkozat:** Ez egy független, nem hivatalos bővítmény. Sem a bővítmény, sem a fejlesztője nem áll kapcsolatban a Használtautó.hu-val, annak tulajdonosával vagy üzemeltetőjével.
+
+![Kivágott asztali képernyőkép a Használtautó keresőmezőjéről és szűrőiről](docs/screenshots/desktop-cropped.jpg)
+
 **Írd le, milyen autót keresel. A bővítmény beállítja a szűrőket.**
 
 A HAHU kereső természetes nyelvű keresőmezőt ad a [Használtautó.hu](https://www.hasznaltauto.hu/kereso) oldalához. A leírásodból az oldal saját keresési feltételeit állítja be, majd megnyitja a találatokat.
 
-> honda jazz 2018-tol 3 millioig
+**Példák**
 
-Egy mondatban megadhatod a márkát, a modellt, az árat, az évjáratot, a futásteljesítményt vagy a felszereltséget. Ékezetek nélkül is írhatsz. Ha egy feltételt nem sikerül beállítani, arról jelzés jelenik meg a találati oldalon. A mobilkép a Használtautó weboldal mobilnézetét mutatja; a bővítmény használatához asztali Chrome szükséges.
+- `uj vitara`
+- `golf 14tol 5mig`
+- `új elektromos max 10m 150k alatt`
+
+Egy mondatban megadhatod a márkát, a modellt, az árat, az évjáratot, a futásteljesítményt vagy a felszereltséget. Ékezetek nélkül is írhatsz. Ha egy feltételt nem sikerül beállítani, arról jelzés jelenik meg a találati oldalon. A bővítmény használatához asztali Chrome szükséges.
 
 ## Telepítés GitHub Release-ből
 
