@@ -2,7 +2,7 @@
 
 ## Tartalomjegyzék
 
-- [Telepítés GitHub Release-ből](#telepítés-github-release-ből)
+- [Telepítés GitHubról](#telepítés-githubról)
 - [Adatvédelem és API-kulcsok](#adatvédelem-és-api-kulcsok)
 - [Licenc](#licenc)
 
@@ -24,12 +24,14 @@ A HAHU kereső természetes nyelvű keresőmezőt ad a [Használtautó.hu](https
 
 Egy mondatban megadhatod a márkát, a modellt, az árat, az évjáratot, a futásteljesítményt vagy a felszereltséget. Ékezetek nélkül is írhatsz. Ha egy feltételt nem sikerül beállítani, arról jelzés jelenik meg a találati oldalon. A bővítmény használatához asztali Chrome szükséges.
 
-## Telepítés GitHub Release-ből
+## Telepítés GitHubról
 
-A használathoz Chrome és a fejlesztőtől kapott API-kulcs kell. Backend-forráskódot vagy helyi backendtelepítést nem kell letöltened: a GitHub Release kiadási csomagja a működő backend címére lesz beállítva.
+A használathoz Chrome és a fejlesztőtől kapott API-kulcs kell. A bővítmény közvetlenül a GitHubról tölthető le; a felhasználónak nem kell buildet készítenie vagy a backendet telepítenie.
 
-1. A repó GitHub-oldalán nyisd meg a **Releases** részt, és töltsd le a legfrissebb kiadás ZIP-csomagját.
-2. Csomagold ki egy állandó mappába. Chrome-ban nyisd meg a `chrome://extensions` oldalt, kapcsold be a **Fejlesztői módot**, majd válaszd a **Kicsomagolt bővítmény betöltése** lehetőséget. A kicsomagolt kiadási mappát válaszd ki.
+**Jelenlegi állapot:** a forráskód még a helyi fejlesztői backendhez csatlakozik. A nyilvános használat előtt a fejlesztő beállítja az éles API címét a bővítményben.
+
+1. A repó GitHub-oldalán válaszd a **Code → Download ZIP** lehetőséget.
+2. Csomagold ki egy állandó mappába. Chrome-ban nyisd meg a `chrome://extensions` oldalt, kapcsold be a **Fejlesztői módot**, majd válaszd a **Kicsomagolt bővítmény betöltése** lehetőséget. A kicsomagolt, `manifest.json` fájlt tartalmazó mappát válaszd ki.
 3. Nyisd meg a Chrome bővítménymenüjéből a **HAHU kereső** panelt. Illeszd be az API-kulcsot, majd válaszd az **Ellenőrzés és mentés** gombot. A panelen a hátralévő keresések száma is látható.
 4. Nyisd meg vagy töltsd újra a [Használtautó keresőoldalát](https://www.hasznaltauto.hu/kereso), írd le, milyen autót keresel, majd kattints az új mező melletti **Keresés** gombra.
 
