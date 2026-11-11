@@ -8,9 +8,7 @@
 
 > **Jogi nyilatkozat:** Ez egy független, nem hivatalos bővítmény. Sem a bővítmény, sem a fejlesztője nem áll kapcsolatban a Használtautó.hu-val, annak tulajdonosával vagy üzemeltetőjével.
 
-![Kivágott asztali képernyőkép a Használtautó keresőmezőjéről és szűrőiről](docs/screenshots/desktop-cropped.jpg)
-
-![A HAHU kereső működés közben: golf 14tol 5mig](docs/previews/desktop-demo.gif)
+![A HAHU kereső bemutatója: természetes nyelvű keresésből beállított szűrők és találatok](docs/previews/search-demo.gif)
 
 **Írd le, milyen autót keresel. A bővítmény beállítja a szűrőket.**
 
