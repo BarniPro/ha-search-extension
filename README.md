@@ -44,7 +44,7 @@ A keresés szövegét külső AI-szolgáltató dolgozza fel. Az AI tévedhet, ez
 ## Adatvédelem és API-kulcsok
 
 - Az API-kulcs a szolgáltatás használatára jogosít, és ehhez kapcsolódik a keresési keret. A bővítmény a böngészőprofilban tárolja, ezért kezeld bizalmasan. Ha eltávolítod a bővítményből, csak erről az eszközről törlődik; a szerveroldali visszavonást a fejlesztőtől kérheted.
-- A beírt keresési szöveg a háttérrendszerhez, majd azon keresztül az OpenAI-hoz kerül feldolgozásra. A bővítmény API-kulcsa a háttérrendszerhez való hozzáférést azonosítja; nem ezt továbbítja az OpenAI-nak. Használat előtt olvasd el az [OpenAI API-ra vonatkozó feltételeket](https://openai.com/policies/services-agreement/).
+- A beírt keresési szöveg a háttérrendszerhez, majd azon keresztül az OpenAI-hoz kerül feldolgozásra. Az üzemeltető a kereséseket és a hozzájuk tartozó eredményeket a hibakereséshez a privát Phoenix naplóban tárolja; ezek ne tartalmazzanak személyes vagy bizalmas adatot. A hozzáférésről és a megőrzésről az üzemeltetőtől kérhetsz tájékoztatást. A bővítmény API-kulcsa a háttérrendszerhez való hozzáférést azonosítja; nem ezt továbbítja az OpenAI-nak. Használat előtt olvasd el az [OpenAI API-ra vonatkozó feltételeket](https://openai.com/policies/services-agreement/).
 
 ## Licenc
 
