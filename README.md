@@ -30,10 +30,14 @@ A használathoz Chrome és a fejlesztőtől kapott API-kulcs kell. A bővítmén
 
 A bővítmény a hosztolt API-hoz csatlakozik. Az API-kulcsot külön, biztonságos csatornán kérd a fejlesztőtől.
 
-1. A repó GitHub-oldalán válaszd a **Code → Download ZIP** lehetőséget.
+1. Töltsd le a bővítményt az alábbi módok egyikével:
+   - **Ajánlott: kiadás letöltése.** Nyisd meg a [legfrissebb kiadást](https://github.com/BarniPro/ha-search-extension/releases/latest), és az **Assets** alatt töltsd le a `hahu-kereso.zip` fájlt. Ez egy rögzített verzió.
+   - **A repó aktuális verziója.** A [GitHub-oldalon](https://github.com/BarniPro/ha-search-extension) válaszd a **Code → Download ZIP** lehetőséget. Ez a repó legfrissebb állapotát tölti le, amely időközben változhat.
 2. Csomagold ki egy állandó mappába. Chrome-ban nyisd meg a `chrome://extensions` oldalt, kapcsold be a **Fejlesztői módot**, majd válaszd a **Kicsomagolt bővítmény betöltése** lehetőséget. A kicsomagolt, `manifest.json` fájlt tartalmazó mappát válaszd ki.
 3. Nyisd meg a Chrome bővítménymenüjéből a **HAHU kereső** panelt. Illeszd be az API-kulcsot, majd válaszd az **Ellenőrzés és mentés** gombot. A panelen a hátralévő keresések száma is látható.
 4. Nyisd meg vagy töltsd újra a [Használtautó keresőoldalát](https://www.hasznaltauto.hu/kereso), írd le, milyen autót keresel, majd kattints az új mező melletti **Keresés** gombra.
+
+A kicsomagolt mappát a használat alatt tartsd meg. A kézzel telepített bővítmény nem frissül automatikusan: új verzió esetén töltsd le és csomagold ki az új ZIP-et, majd a Chrome bővítményoldalán távolítsd el a régi példányt és töltsd be az újat. Az eltávolítás törli az eszközön tárolt API-kulcsot, ezért azt újra meg kell adnod.
 
 A keresés szövegét külső AI-szolgáltató dolgozza fel. Az AI tévedhet, ezért ellenőrizd a beállított szűrőket és a találatokat. Ha valamelyik feltételt nem sikerült beállítani, a találati oldalon erről is jelzés jelenik meg.
 

@@ -66,13 +66,14 @@
   <p>Egy mondatban megadhatod a márkát, a modellt, az árat, az évjáratot, a futásteljesítményt vagy a felszereltséget. Ékezetek nélkül is írhatsz. Ha egy feltételt nem sikerül beállítani, arról jelzés jelenik meg a találati oldalon. A bővítmény használatához asztali Chrome szükséges.</p>
 
   <h2 id="telepítés-github-release-ből">Telepítés GitHub Release-ből</h2>
-  <p>A használathoz Chrome és a fejlesztőtől kapott API-kulcs kell. Backend-forráskódot vagy helyi backendtelepítést nem kell letöltened: a GitHub Release kiadási csomagja a működő backend címére lesz beállítva.</p>
+  <p>A használathoz Chrome és a fejlesztőtől kapott API-kulcs kell. Backendtelepítésre és buildelésre nincs szükség. A kulcsot külön, biztonságos csatornán kérd a fejlesztőtől.</p>
   <ol>
-    <li>A repó GitHub-oldalán nyisd meg a <strong>Releases</strong> részt, és töltsd le a legfrissebb kiadás ZIP-csomagját.</li>
+    <li>Ajánlott: a <a href="https://github.com/BarniPro/ha-search-extension/releases/latest">legfrissebb kiadás</a> <strong>Assets</strong> részéből töltsd le a <code>hahu-kereso.zip</code> fájlt. Vagy a <a href="https://github.com/BarniPro/ha-search-extension">repó GitHub-oldalán</a> válaszd a <strong>Code → Download ZIP</strong> lehetőséget az aktuális verzióhoz.</li>
     <li>Csomagold ki egy állandó mappába. Chrome-ban nyisd meg a <code>chrome://extensions</code> oldalt, kapcsold be a <strong>Fejlesztői módot</strong>, majd válaszd a <strong>Kicsomagolt bővítmény betöltése</strong> lehetőséget. A kicsomagolt kiadási mappát válaszd ki.</li>
     <li>Nyisd meg a Chrome bővítménymenüjéből a <strong>HAHU kereső</strong> panelt. Illeszd be az API-kulcsot, majd válaszd az <strong>Ellenőrzés és mentés</strong> gombot. A panelen a hátralévő keresések száma is látható.</li>
     <li>Nyisd meg vagy töltsd újra a <a href="https://www.hasznaltauto.hu/kereso">Használtautó keresőoldalát</a>, írd le, milyen autót keresel, majd kattints az új mező melletti <strong>Keresés</strong> gombra.</li>
   </ol>
+  <p>A kicsomagolt mappát tartsd meg. A kézzel telepített bővítmény nem frissül automatikusan. Új verzióhoz töltsd le és csomagold ki az új ZIP-et, távolítsd el a régi példányt, és töltsd be az újat; a kulcsot ezután újra meg kell adnod.</p>
   <p class="note">A keresés szövegét külső AI-szolgáltató dolgozza fel. Az AI tévedhet, ezért ellenőrizd a beállított szűrőket és a találatokat. Ha valamelyik feltételt nem sikerült beállítani, a találati oldalon erről is jelzés jelenik meg.</p>
 
   <h2 id="adatvédelem-és-api-kulcsok">Adatvédelem és API-kulcsok</h2>
