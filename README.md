@@ -28,7 +28,7 @@ Egy mondatban megadhatod a márkát, a modellt, az árat, az évjáratot, a fut�
 
 A használathoz Chrome és a fejlesztőtől kapott API-kulcs kell. A bővítmény közvetlenül a GitHubról tölthető le; a felhasználónak nem kell buildet készítenie vagy a backendet telepítenie.
 
-**Jelenlegi állapot:** a forráskód még a helyi fejlesztői backendhez csatlakozik. A nyilvános használat előtt a fejlesztő beállítja az éles API címét a bővítményben.
+A bővítmény a hosztolt API-hoz csatlakozik. Az API-kulcsot külön, biztonságos csatornán kérd a fejlesztőtől.
 
 1. A repó GitHub-oldalán válaszd a **Code → Download ZIP** lehetőséget.
 2. Csomagold ki egy állandó mappába. Chrome-ban nyisd meg a `chrome://extensions` oldalt, kapcsold be a **Fejlesztői módot**, majd válaszd a **Kicsomagolt bővítmény betöltése** lehetőséget. A kicsomagolt, `manifest.json` fájlt tartalmazó mappát válaszd ki.

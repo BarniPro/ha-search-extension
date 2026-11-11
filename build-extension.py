@@ -72,7 +72,7 @@ def main():
         destination.parent.mkdir(parents=True, exist_ok=True)
         if relative == manifest["background"]["service_worker"]:
             contents = source.read_text()
-            marker = 'const CONFIGURED_BACKEND_ORIGIN = "http://127.0.0.1:8080";'
+            marker = 'const CONFIGURED_BACKEND_ORIGIN = "https://demo.lorinczbarnabas.hu";'
             if contents.count(marker) != 1:
                 raise SystemExit("Could not locate the extension backend-origin build setting.")
             contents = contents.replace(marker, f"const CONFIGURED_BACKEND_ORIGIN = {json.dumps(backend_origin)};", 1)

@@ -1,6 +1,6 @@
 (() => {
   const DEFAULTS = { haaiManualApiKey: "" };
-  const CONFIGURED_BACKEND_ORIGIN = "http://127.0.0.1:8080";
+  const CONFIGURED_BACKEND_ORIGIN = "https://demo.lorinczbarnabas.hu";
   const ATTEMPT_TIMEOUT_MS = 30000;
   const MAX_ATTEMPTS = 2;
   const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);

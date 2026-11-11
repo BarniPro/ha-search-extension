@@ -13,7 +13,7 @@
     "storage"
   ],
   "host_permissions": [
-    "http://127.0.0.1:8080/*"
+    "https://demo.lorinczbarnabas.hu/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -61,5 +61,6 @@
     },
     "default_popup": "popup.html",
     "default_title": "HAHU kereső"
-  }
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8K0tOdhI1hQLbG5Aq75cOsiUfo0cS3NWX3+eg7UENrnLFkjt7ukbEMWQETjO5BQnzDOs9NMpLW9YhIFGn3gxfOVYYf/INkDFWHloP9NZWyWdVChrEbxETZpl/KYFyuR8jiJTjLNcTCIL2oIJ6x59CZKg0HtnjBoU+kKdt0X6Tz/t9yrrC/y4RAQIYZ9lf2nwg2oal9RbAMAPw++Z0VqG/NQycXBr2HRlTr5DBrNPfWOASX3WYnK8aaCLL6h+D+1LnJYmJ67G4iDT5qG2IqGJ8mM++iRaM2Hor9m5nsfbNJvOEexNlZSDwKfAnMqiN5Xq1sHjCluBQ+FrrbqVKe36mQIDAQAB"
 }
