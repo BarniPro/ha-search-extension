@@ -1,3 +1,7 @@
+# 0.5.3
+
+- A gyorskereső a kérés értelmezése közben betölti a Használtautó.hu részletes keresőűrlapját, így hamarabb megnyithatja a találatokat.
+
 # 0.5.2
 
 - Javítja a márka-, modell- és évjáratszűrők beállítását a Használtautó.hu új, soralapú részletes keresőjében.

@@ -146,22 +146,34 @@
       status.setAttribute('role', 'status');
       status.removeAttribute('aria-label');
     };
-    async function launchPlan(plan) {
-      if (plan.mode !== 'A') throw new Error('A visszaadott keresési mód nem támogatott.');
-      const filters = globalThis.HAAINativeAdapter.validateOperations(plan.filters);
-      const omissions = globalThis.HAAINativeAdapter.omissions(plan.omissions);
-      if (!filters.length) throw new Error('Nem találtam beállítható keresési feltételt.');
-      const framePlan = { filters, omissions, mode: plan.mode, request_id: plan.request_id };
+    function createSearchFrame() {
       const frame = document.createElement('iframe');
       frame.title = 'Keresési feltételek alkalmazása';
       frame.setAttribute('aria-hidden', 'true');
       frame.tabIndex = -1;
       frame.style.cssText = 'position:fixed;left:-20000px;top:0;width:1200px;height:900px;visibility:hidden;pointer-events:none';
+      frame.src = new URL('/bovitettkereso/szemelyauto', location.origin).href;
+      return frame;
+    }
+
+    async function launchPlan(plan, preparedFrame) {
+      if (plan.mode !== 'A') throw new Error('A visszaadott keresési mód nem támogatott.');
+      const filters = globalThis.HAAINativeAdapter.validateOperations(plan.filters);
+      const omissions = globalThis.HAAINativeAdapter.omissions(plan.omissions);
+      if (!filters.length) throw new Error('Nem találtam beállítható keresési feltételt.');
+      const framePlan = { filters, omissions, mode: plan.mode, request_id: plan.request_id };
+      const frame = preparedFrame || createSearchFrame();
       await new Promise((resolve, reject) => {
         let finished = false;
         let accepted = false;
         let routePoll;
-        const cleanup = () => { clearTimeout(timeout); clearInterval(routePoll); window.removeEventListener('message', onFrameMessage); frame.remove(); };
+        const cleanup = () => {
+          clearTimeout(timeout);
+          clearInterval(routePoll);
+          window.removeEventListener('message', onFrameMessage);
+          frame.removeEventListener('load', routeChange);
+          frame.remove();
+        };
         const fail = error => {
           if (finished) return;
           finished = true; cleanup(); reject(error);
@@ -194,8 +206,8 @@
         frame.addEventListener('load', routeChange);
         routePoll = setInterval(routeChange, 180);
         show('Megnyitom a keresőt, majd beállítom a feltételeket…');
-        frame.src = new URL('/bovitettkereso/szemelyauto', location.origin).href;
-        document.body.append(frame);
+        if (preparedFrame) routeChange();
+        else document.body.append(frame);
       });
     }
 
@@ -205,7 +217,10 @@
       const query = input.value.trim();
       if (query.length < 3) { show('Írj be legalább néhány szót.', 'error'); return; }
       setLoading(true); chipsBox.replaceChildren(); show('Értelmezem a keresési feltételeket… Ez eltarthat néhány másodpercig.');
+      let frame;
       try {
+        frame = createSearchFrame();
+        document.body.append(frame);
         await runtimeMessage({ type: 'HAAI_STORE_RESULT_NOTICE', omissions: [] });
         const requestedMode = 'A';
         const response = await runtimeMessage({ type: 'HAAI_INTERPRET', query, mode: requestedMode, client_request_id: requestId() });
@@ -214,11 +229,14 @@
         if (!plan || !Array.isArray(plan.filters) || !Array.isArray(plan.omissions) || typeof plan.mode !== 'string') throw new Error('A keresési feltételeket nem sikerült beolvasni.');
         if (plan.mode !== requestedMode) throw new Error('A keresési feltételeket nem sikerült beállítani. Próbáld újra.');
         show('Értelmeztem a kérést. Beállítom a szűrőket és megnyitom a találatokat…');
-        await launchPlan(plan);
+        await launchPlan(plan, frame);
         return;
       } catch (error) {
         show(`Nem sikerült elindítani a keresést: ${error.message || String(error)}`, 'error');
-      } finally { setLoading(false); }
+      } finally {
+        frame?.remove();
+        setLoading(false);
+      }
     });
 
     if (pendingLaunchToken) {
