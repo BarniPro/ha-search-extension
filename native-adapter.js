@@ -2,6 +2,10 @@
   const ALLOWED_TYPES = new Set(["checkbox", "radio", "option", "number", "postcode"]);
   const BRAND_NAME = "form[brandModel][brand][]";
   const MODEL_NAME = "form[brandModel][model][]";
+  const ROW_BASED_FIELDS = new Map([
+    [BRAND_NAME, "form[brandModelRows][0][brand]"],
+    [MODEL_NAME, "form[brandModelRows][0][model]"]
+  ]);
 
   function validateOperations(filters) {
     if (!Array.isArray(filters) || filters.length > 75) throw new Error("A keresési feltételeket nem sikerült beolvasni.");
@@ -29,7 +33,11 @@
   }
 
   function controls(form, name) {
-    return [...form.querySelectorAll("input[name],select[name]")].filter(element => element.name === name);
+    const elements = [...form.querySelectorAll("input[name],select[name]")];
+    const direct = elements.filter(element => element.name === name);
+    if (direct.length) return direct;
+    const rowBasedName = ROW_BASED_FIELDS.get(name);
+    return rowBasedName ? elements.filter(element => element.name === rowBasedName) : [];
   }
 
   function setValue(element, value) {
@@ -72,6 +80,13 @@
           }, 15000, 120) || [];
           for (const operation of group) if (!elements.some(element => element.value === operation.v)) throw new Error(`A kért modell nem szerepel a márkához tartozó mezőben: ${operation.v}`);
         }
+        if (ROW_BASED_FIELDS.has(name) && group.length === 1 && elements.length && elements.every(element => element.type === "radio")) {
+          const selected = elements.find(element => element.value === group[0].v);
+          if (!selected) throw new Error(`Eltűnt választható érték: ${group[0].v}`);
+          if (!selected.checked) selected.click();
+          if (!selected.checked) throw new Error(`Nem sikerült beállítani: ${group[0].v}`);
+          continue;
+        }
         if (!elements.length || elements.some(element => element.type !== "checkbox")) throw new Error(`Eltűnt vagy megváltozott mező: ${name}`);
         for (const element of elements) if (element.checked) element.click();
         for (const operation of group) {
@@ -106,7 +121,10 @@
         const input = form.querySelector("#settlementSelect");
         if (!input) throw new Error("Az irányítószám-mező eltűnt.");
         setValue(input, value);
-        const options = await until(() => [...form.ownerDocument.querySelectorAll("button[data-postal-code]")].filter(option => option.dataset.postalCode === value), 3000, 120) || [];
+        const options = await until(() => {
+          const matches = [...form.ownerDocument.querySelectorAll("button[data-postal-code]")].filter(option => option.dataset.postalCode === value);
+          return matches.length ? matches : null;
+        }, 3000, 120) || [];
         if (options.length !== 1) throw new Error("Az irányítószám nem választható egyértelműen.");
         options[0].click();
       }
